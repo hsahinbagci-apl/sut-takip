@@ -1,15 +1,15 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, Type } from "@google/generative-ai";
 import { getSUTCodes } from "./storageService";
 
 const getAI = () => {
     // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
     const apiKey = process.env.API_KEY;
-    
+
     if (!apiKey) {
         console.warn("API Key eksik veya bulunamadı. Yapay zeka özellikleri devre dışı.");
         return null;
     }
-    return new GoogleGenAI({ apiKey });
+    return new GoogleGenerativeAI(apiKey);
 };
 
 export const analyzeMedicalNote = async (note: string): Promise<{ suggestedCodes: string[], summary: string }> => {
@@ -54,7 +54,7 @@ export const analyzeMedicalNote = async (note: string): Promise<{ suggestedCodes
                 }
             }
         });
-        
+
         const result = JSON.parse(response.text || "{}");
         return {
             suggestedCodes: result.suggestedCodes || [],
