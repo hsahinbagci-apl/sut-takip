@@ -1,20 +1,24 @@
-import { GoogleGenerativeAI, Type } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getSUTCodes } from "./storageService";
 
-const getAI = () => {
+const getAIModel = () => {
     // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-    const apiKey = process.env.API_KEY;
+    const apiKey = process.env.VITE_API_KEY || "";
 
     if (!apiKey) {
         console.warn("API Key eksik veya bulunamadı. Yapay zeka özellikleri devre dışı.");
         return null;
     }
-    return new GoogleGenerativeAI(apiKey);
+    const genAI = new GoogleGenerativeAI(apiKey);
+    return genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+        generationConfig: { responseMimeType: "application/json" }
+    });
 };
 
 export const analyzeMedicalNote = async (note: string): Promise<{ suggestedCodes: string[], summary: string }> => {
-    const ai = getAI();
-    if (!ai) {
+    const model = getAIModel();
+    if (!model) {
         return { suggestedCodes: [], summary: "" };
     }
 
@@ -23,7 +27,15 @@ export const analyzeMedicalNote = async (note: string): Promise<{ suggestedCodes
     const availableCodes = currentCodes.map(c => `${c.code}: ${c.description}`).join('\n');
 
     const prompt = `
-    Aşağıdaki tıbbi notu analiz et.
+    Aşağıdaki tıbbi notu analiz et ve sonucu JSON formatında döndür.
+    
+    JSON Şeması:
+    {
+      "suggestedCodes": ["string"],
+      "summary": "string"
+    }
+
+    Analiz Kuralları:
     1. Verilen SUT kodu listesinden, bu nota en uygun olabilecek SUT kodlarını bul ve kodlarını listele (örn: "530.010").
     2. Notun kısa, resmi bir özetini çıkar.
 
@@ -35,30 +47,14 @@ export const analyzeMedicalNote = async (note: string): Promise<{ suggestedCodes
     `;
 
     try {
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        suggestedCodes: {
-                            type: Type.ARRAY,
-                            items: { type: Type.STRING }
-                        },
-                        summary: {
-                            type: Type.STRING
-                        }
-                    }
-                }
-            }
-        });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
 
-        const result = JSON.parse(response.text || "{}");
+        const data = JSON.parse(text || "{}");
         return {
-            suggestedCodes: result.suggestedCodes || [],
-            summary: result.summary || ""
+            suggestedCodes: data.suggestedCodes || [],
+            summary: data.summary || ""
         };
 
     } catch (error) {
