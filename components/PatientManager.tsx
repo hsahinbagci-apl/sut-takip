@@ -5,19 +5,19 @@ import { getPatients, savePatient, getDoctors, getTestProtocols, getEntriesByPat
 const PatientManager: React.FC = () => {
     const [patients, setPatients] = useState<Patient[]>([]);
     const currentUser = getCurrentUser();
-    
+
     // Main Form (Basic Info) State
     const [isFormOpen, setIsFormOpen] = useState(false);
-    
+
     // Process Dates Modal State
     const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
-    
+
     // New structure for Process Modal to support multiple protocols
     const [processModalData, setProcessModalData] = useState<{
         patientId: string;
         protocolNo: string;
         selectedProtocolId: string; // The specific protocol we are editing dates for
-        
+
         // Form fields
         workStartDate: string;
         dataShareDate: string;
@@ -59,7 +59,7 @@ const PatientManager: React.FC = () => {
 
     // Timeline Modal State
     const [timelinePatient, setTimelinePatient] = useState<Patient | null>(null);
-    
+
     // Settings Data
     const [availableDoctors, setAvailableDoctors] = useState<string[]>([]);
     const [availableProtocols, setAvailableProtocols] = useState<TestProtocol[]>([]);
@@ -75,7 +75,7 @@ const PatientManager: React.FC = () => {
         testName: '',
         doctor: ''
     });
-    
+
     // Define clean initial state
     const getInitialFormState = (): Partial<Patient> => ({
         protocolNo: '',
@@ -85,7 +85,7 @@ const PatientManager: React.FC = () => {
         admissionDate: new Date().toISOString().split('T')[0],
         notes: '',
         entryFrequencyDays: 30,
-        interProtocolGapDays: 10,
+        interProtocolGapDays: 11,
         status: 'active',
         assignedProtocolIds: [],
         activeProtocolId: '',
@@ -154,8 +154,8 @@ const PatientManager: React.FC = () => {
 
         // Duplicate Protocol Check
         const normalizedProtocol = formData.protocolNo.trim().toLowerCase();
-        const duplicate = patients.find(p => 
-            p.protocolNo.trim().toLowerCase() === normalizedProtocol && 
+        const duplicate = patients.find(p =>
+            p.protocolNo.trim().toLowerCase() === normalizedProtocol &&
             p.id !== formData.id // Exclude self if editing
         );
 
@@ -168,7 +168,7 @@ const PatientManager: React.FC = () => {
         if (selectedProtocols.length > 0) {
             finalTestName = selectedProtocols.map(p => p.name).join(' + ');
         }
-        
+
         const assignedIds = selectedProtocols.map(p => p.id);
         const existingPatient = patients.find(p => p.id === formData.id);
 
@@ -180,16 +180,16 @@ const PatientManager: React.FC = () => {
             protocolNo: formData.protocolNo,
             tissueType: formData.tissueType || '',
             testName: finalTestName,
-            
+
             assignedProtocolIds: assignedIds,
-            activeProtocolId: existingPatient ? formData.activeProtocolId : startProtocolId, 
-            interProtocolGapDays: formData.interProtocolGapDays || 10,
-            
+            activeProtocolId: existingPatient ? formData.activeProtocolId : startProtocolId,
+            interProtocolGapDays: formData.interProtocolGapDays || 11,
+
             currentStepIndex: existingPatient ? existingPatient.currentStepIndex : 0,
-            
+
             requestingDoctor: formData.requestingDoctor || '',
             admissionDate: formData.admissionDate || new Date().toISOString(),
-            
+
             // Legacy Date Fields (Preserved but moving towards protocolProcesses)
             workStartDate: existingPatient?.workStartDate,
             dataShareDate: existingPatient?.dataShareDate,
@@ -197,7 +197,7 @@ const PatientManager: React.FC = () => {
             reportDate: existingPatient?.reportDate,
             isRepeated: existingPatient?.isRepeated,
             repeatWorkDate: existingPatient?.repeatWorkDate,
-            
+
             protocolProcesses: existingProcesses,
 
             notes: formData.notes || '',
@@ -205,7 +205,7 @@ const PatientManager: React.FC = () => {
             status: existingPatient ? existingPatient.status : 'active',
             statusReason: existingPatient ? existingPatient.statusReason : '',
             statusDate: existingPatient ? existingPatient.statusDate : '',
-            
+
             lastEntryDate: existingPatient ? existingPatient.lastEntryDate : null,
             nextScheduledDate: existingPatient ? existingPatient.nextScheduledDate : undefined,
             nextScheduledNote: existingPatient ? existingPatient.nextScheduledNote : undefined,
@@ -219,7 +219,7 @@ const PatientManager: React.FC = () => {
     };
 
     // --- PROCESS MODAL LOGIC ---
-    
+
     // Open Modal
     const handleOpenProcessModal = (patient: Patient) => {
         // Determine initial protocol to show
@@ -231,7 +231,7 @@ const PatientManager: React.FC = () => {
 
         // Try to find existing process data for this protocol
         const existingProcess = patient.protocolProcesses?.find(p => p.protocolId === initialProtocolId);
-        
+
         // If not found in new structure, fallback to legacy top-level fields (for backward compatibility or if single protocol)
         const workStartDate = existingProcess?.workStartDate || (initialProtocolId ? '' : patient.workStartDate) || '';
         const dataShareDate = existingProcess?.dataShareDate || (initialProtocolId ? '' : patient.dataShareDate) || '';
@@ -284,14 +284,14 @@ const PatientManager: React.FC = () => {
         // VALIDATION: Work Start Date vs Admission Date
         if (processModalData.workStartDate && patient.admissionDate) {
             if (processModalData.workStartDate < patient.admissionDate) {
-                 alert(`Hata: Çalışma Başlangıcı tarihi (${new Date(processModalData.workStartDate).toLocaleDateString('tr-TR')}), Geliş Tarihinden (${new Date(patient.admissionDate).toLocaleDateString('tr-TR')}) önce olamaz.`);
-                 return;
+                alert(`Hata: Çalışma Başlangıcı tarihi (${new Date(processModalData.workStartDate).toLocaleDateString('tr-TR')}), Geliş Tarihinden (${new Date(patient.admissionDate).toLocaleDateString('tr-TR')}) önce olamaz.`);
+                return;
             }
         }
 
         // Create new patient object copy
         const updatedPatient = { ...patient };
-        
+
         // Ensure array exists
         if (!updatedPatient.protocolProcesses) {
             updatedPatient.protocolProcesses = [];
@@ -336,7 +336,7 @@ const PatientManager: React.FC = () => {
     const handleEdit = (patient: Patient) => {
         setFormData({
             ...patient,
-            interProtocolGapDays: patient.interProtocolGapDays || 10
+            interProtocolGapDays: patient.interProtocolGapDays || 11
         });
         refreshData(); // Ensure fresh lists for dropdowns
         setIsFormOpen(true);
@@ -345,7 +345,7 @@ const PatientManager: React.FC = () => {
     const handleDeletePatient = (e: React.MouseEvent, patientId: string) => {
         e.preventDefault();
         e.stopPropagation(); // Prevent row click
-        
+
         if (window.confirm('DİKKAT! Bu hasta ve tüm verileri kalıcı olarak silinecek. Emin misiniz?')) {
             // Optimistic UI Update: Remove from screen immediately
             setPatients(prev => prev.filter(p => p.id !== patientId));
@@ -379,7 +379,7 @@ const PatientManager: React.FC = () => {
     };
 
     const getStatusLabel = (status: string) => {
-        switch(status) {
+        switch (status) {
             case 'active': return 'Aktif';
             case 'completed': return 'Tamamlandı';
             case 'ex': return 'EX';
@@ -393,7 +393,7 @@ const PatientManager: React.FC = () => {
     const handleSaveStatus = (e: React.FormEvent) => {
         e.preventDefault();
         const patient = patients.find(p => p.id === statusFormData.patientId);
-        if(!patient) return;
+        if (!patient) return;
 
         const updatedPatient = { ...patient };
         const oldStatus = patient.status;
@@ -416,7 +416,7 @@ const PatientManager: React.FC = () => {
         if (statusFormData.newStatus === 'ex') {
             updatedPatient.nextScheduledDate = undefined;
             updatedPatient.nextScheduledNote = "Hasta EX oldu. Süreç iptal.";
-            
+
             if (updatedPatient.assignedProtocolIds && updatedPatient.activeProtocolId) {
                 const currentIndex = updatedPatient.assignedProtocolIds.indexOf(updatedPatient.activeProtocolId);
                 if (currentIndex >= 0) {
@@ -431,14 +431,14 @@ const PatientManager: React.FC = () => {
         } else if (statusFormData.newStatus === 'active' && oldStatus !== 'active') {
             updatedPatient.nextScheduledNote = (updatedPatient.nextScheduledNote || '').replace('[DURAKLATILDI] ', '');
             if (!updatedPatient.nextScheduledDate && updatedPatient.lastEntryDate) {
-                 updatedPatient.nextScheduledDate = new Date().toISOString().split('T')[0];
-                 updatedPatient.nextScheduledNote = "Süreç tekrar aktif edildi. Kontrol ediniz.";
+                updatedPatient.nextScheduledDate = new Date().toISOString().split('T')[0];
+                updatedPatient.nextScheduledNote = "Süreç tekrar aktif edildi. Kontrol ediniz.";
             }
         }
 
         savePatient(updatedPatient);
         addLog('DURUM_DEGISTIRME', `Hasta ${patient.protocolNo} durumu ${statusFormData.newStatus} olarak güncellendi.`);
-        
+
         refreshData();
         setIsStatusModalOpen(false);
     };
@@ -452,15 +452,15 @@ const PatientManager: React.FC = () => {
     const handleDeleteHistoryEntry = (entryId: string, e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        if(window.confirm('Bu SUT giriş kaydı silinecek. Puanlar geri alınacak ancak hasta protokol ilerlemesi (adım sayısı) otomatik geri alınmaz. Devam edilsin mi?')) {
+
+        if (window.confirm('Bu SUT giriş kaydı silinecek. Puanlar geri alınacak ancak hasta protokol ilerlemesi (adım sayısı) otomatik geri alınmaz. Devam edilsin mi?')) {
             // Optimistic UI Update
             setHistoryEntries(prev => prev.filter(entry => entry.id !== entryId));
 
             try {
                 deleteEntry(entryId);
                 // No need for immediate re-fetch if optimistic update matches.
-            } catch(error) {
+            } catch (error) {
                 console.error("Giriş silme hatası:", error);
                 alert("İşlem sırasında hata oluştu.");
                 if (viewingHistoryPatient) {
@@ -478,18 +478,18 @@ const PatientManager: React.FC = () => {
         csv += "Protokol No;Durum;Test;Uzman;Girilen SUT Kodlari;Notlar;Tekrar?\n";
 
         filteredPatients.forEach(p => {
-             // Fetch SUT codes for this patient
-             const pEntries = getEntriesByPatient(p.id);
-             
-             // Format: "Code1 + Code2 | Code3"
-             const sutCodesString = pEntries.map(entry => 
-                 entry.selectedCodes.map(sc => sc.code).join(' + ')
-             ).join(' | ');
-             
-             // Clean notes to avoid breaking CSV format
-             const cleanNotes = (p.notes || '').replace(/;/g, ' - ').replace(/\n/g, ' ');
+            // Fetch SUT codes for this patient
+            const pEntries = getEntriesByPatient(p.id);
 
-             csv += `${p.protocolNo};${getStatusLabel(p.status)};${p.testName};${p.requestingDoctor};${sutCodesString};${cleanNotes};${p.isRepeated ? 'Evet' : 'Hayır'}\n`;
+            // Format: "Code1 + Code2 | Code3"
+            const sutCodesString = pEntries.map(entry =>
+                entry.selectedCodes.map(sc => sc.code).join(' + ')
+            ).join(' | ');
+
+            // Clean notes to avoid breaking CSV format
+            const cleanNotes = (p.notes || '').replace(/;/g, ' - ').replace(/\n/g, ' ');
+
+            csv += `${p.protocolNo};${getStatusLabel(p.status)};${p.testName};${p.requestingDoctor};${sutCodesString};${cleanNotes};${p.isRepeated ? 'Evet' : 'Hayır'}\n`;
         });
 
         const encodedUri = encodeURI(csv);
@@ -519,7 +519,7 @@ const PatientManager: React.FC = () => {
     };
 
     const getStatusBadge = (status: string) => {
-        switch(status) {
+        switch (status) {
             case 'active': return <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">Aktif</span>;
             case 'completed': return <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-bold">Tamamlandı</span>;
             case 'ex': return <span className="bg-black text-white px-2 py-1 rounded-full text-xs font-bold">EX</span>;
@@ -529,12 +529,12 @@ const PatientManager: React.FC = () => {
             default: return <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">Bilinmiyor</span>;
         }
     };
-    
+
     // Helper to get active patient for process modal context
     const processModalPatient = patients.find(p => p.id === processModalData.patientId);
-    
+
     // Identify assigned protocols for the current patient in the modal
-    const processModalAssignedProtocols = processModalPatient?.assignedProtocolIds?.map(id => 
+    const processModalAssignedProtocols = processModalPatient?.assignedProtocolIds?.map(id =>
         availableProtocols.find(p => p.id === id)
     ).filter(Boolean) as TestProtocol[] || [];
 
@@ -546,14 +546,14 @@ const PatientManager: React.FC = () => {
                     <p className="text-gray-500">Laboratuvar süreçleri ve hasta detayları.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button 
+                    <button
                         onClick={handleExportCSV}
                         className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors flex items-center gap-2"
                         title="Listeyi Excel(CSV) olarak indir"
                     >
                         📥 Liste İndir
                     </button>
-                    <button 
+                    <button
                         type="button"
                         onClick={handleNewPatient}
                         className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-md transition-all flex items-center space-x-2"
@@ -565,26 +565,26 @@ const PatientManager: React.FC = () => {
 
             {/* Filter Bar */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
-                <input 
-                    type="text" 
-                    placeholder="🔍 Protokol No Ara..." 
+                <input
+                    type="text"
+                    placeholder="🔍 Protokol No Ara..."
                     className="border border-gray-300 rounded-lg p-2 text-sm outline-none focus:border-blue-500"
                     value={filters.protocol}
-                    onChange={e => setFilters({...filters, protocol: e.target.value})}
+                    onChange={e => setFilters({ ...filters, protocol: e.target.value })}
                 />
-                <input 
-                    type="text" 
-                    placeholder="Test Adı" 
+                <input
+                    type="text"
+                    placeholder="Test Adı"
                     className="border border-gray-300 rounded-lg p-2 text-sm outline-none focus:border-blue-500"
                     value={filters.testName}
-                    onChange={e => setFilters({...filters, testName: e.target.value})}
+                    onChange={e => setFilters({ ...filters, testName: e.target.value })}
                 />
-                <input 
-                    type="text" 
-                    placeholder="İstemi Yapan Uzman" 
+                <input
+                    type="text"
+                    placeholder="İstemi Yapan Uzman"
                     className="border border-gray-300 rounded-lg p-2 text-sm outline-none focus:border-blue-500"
                     value={filters.doctor}
-                    onChange={e => setFilters({...filters, doctor: e.target.value})}
+                    onChange={e => setFilters({ ...filters, doctor: e.target.value })}
                 />
             </div>
 
@@ -605,7 +605,7 @@ const PatientManager: React.FC = () => {
                         <tbody className="divide-y divide-gray-100">
                             {filteredPatients.map(patient => (
                                 <tr key={patient.id} className={`hover:bg-blue-50 transition-colors cursor-default group ${patient.status === 'ex' ? 'bg-gray-50 opacity-70' : ''}`}>
-                                    <td 
+                                    <td
                                         className="px-4 py-3 font-mono font-bold text-blue-700 text-base cursor-pointer hover:underline hover:text-blue-900 relative"
                                         onClick={() => handleOpenTimeline(patient)}
                                         title="Zaman Çizelgesini Görüntüle"
@@ -629,10 +629,10 @@ const PatientManager: React.FC = () => {
                                         {patient.assignedProtocolIds && patient.assignedProtocolIds.length > 1 && (
                                             <div className="flex gap-1 mt-1">
                                                 {patient.assignedProtocolIds.map((pid, idx) => {
-                                                     const isCurrent = pid === patient.activeProtocolId;
-                                                     return (
-                                                         <span key={idx} className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-blue-600 animate-pulse' : 'bg-gray-300'}`} title={`Protokol ${idx+1}`}></span>
-                                                     )
+                                                    const isCurrent = pid === patient.activeProtocolId;
+                                                    return (
+                                                        <span key={idx} className={`w-2 h-2 rounded-full ${isCurrent ? 'bg-blue-600 animate-pulse' : 'bg-gray-300'}`} title={`Protokol ${idx + 1}`}></span>
+                                                    )
                                                 })}
                                             </div>
                                         )}
@@ -648,11 +648,11 @@ const PatientManager: React.FC = () => {
                                                 <span className="text-[10px] text-gray-400 mt-1 max-w-[150px] truncate">{patient.nextScheduledNote}</span>
                                             </div>
                                         ) : (
-                                            patient.status === 'completed' ? 
-                                            <span className="text-green-500 font-bold text-xs">Tamamlandı</span> :
-                                            (patient.status === 'ex' || patient.status === 'hospitalized' || patient.status === 'paused') ?
-                                            <span className="text-gray-400 text-xs italic">Süreç Duraklatıldı</span> :
-                                            <span className="text-gray-400 text-xs">Plan Yok</span>
+                                            patient.status === 'completed' ?
+                                                <span className="text-green-500 font-bold text-xs">Tamamlandı</span> :
+                                                (patient.status === 'ex' || patient.status === 'hospitalized' || patient.status === 'paused') ?
+                                                    <span className="text-gray-400 text-xs italic">Süreç Duraklatıldı</span> :
+                                                    <span className="text-gray-400 text-xs">Plan Yok</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-center">
@@ -665,7 +665,7 @@ const PatientManager: React.FC = () => {
                                             >
                                                 🚩
                                             </button>
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => handleOpenProcessModal(patient)}
                                                 className="text-orange-500 hover:text-orange-700 p-1.5 rounded hover:bg-orange-50 transition-colors border border-orange-200"
@@ -673,7 +673,7 @@ const PatientManager: React.FC = () => {
                                             >
                                                 📅
                                             </button>
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => handleEdit(patient)}
                                                 className="text-gray-500 hover:text-blue-600 p-1.5 rounded hover:bg-blue-50 transition-colors"
@@ -681,14 +681,14 @@ const PatientManager: React.FC = () => {
                                             >
                                                 ✏️
                                             </button>
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => handleViewHistory(patient)}
                                                 className="text-blue-600 hover:text-blue-800 text-xs font-medium underline"
                                             >
                                                 Geçmiş
                                             </button>
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={(e) => handleDeletePatient(e, patient.id)}
                                                 className="text-red-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition-colors"
@@ -720,7 +720,7 @@ const PatientManager: React.FC = () => {
                             </div>
                             <button onClick={() => setTimelinePatient(null)} className="text-gray-400 hover:text-gray-700 text-2xl transition-colors">&times;</button>
                         </div>
-                        
+
                         <div className="overflow-y-auto p-6 bg-slate-50 flex-1">
                             {(!timelinePatient.assignedProtocolIds || timelinePatient.assignedProtocolIds.length === 0) ? (
                                 <div className="text-center py-10 text-gray-400">
@@ -731,7 +731,7 @@ const PatientManager: React.FC = () => {
                                     {timelinePatient.assignedProtocolIds.map((protoId, idx) => {
                                         const protocol = availableProtocols.find(p => p.id === protoId);
                                         const isActive = protoId === timelinePatient.activeProtocolId;
-                                        
+
                                         // Determine phase: Past (Completed), Current (Active), Future (Pending)
                                         // We assume ordered list matches execution order
                                         const activeIndex = timelinePatient.assignedProtocolIds!.indexOf(timelinePatient.activeProtocolId || '');
@@ -744,15 +744,15 @@ const PatientManager: React.FC = () => {
                                             <div key={idx} className="relative pl-10 group">
                                                 {/* Dot on Line */}
                                                 <div className={`absolute left-0 top-3 w-10 h-10 rounded-full border-4 flex items-center justify-center bg-white z-10 
-                                                    ${isPast ? 'border-green-500 text-green-500' : 
-                                                      isActive ? 'border-blue-500 text-blue-500 animate-pulse' : 'border-gray-300 text-gray-300'}`}>
+                                                    ${isPast ? 'border-green-500 text-green-500' :
+                                                        isActive ? 'border-blue-500 text-blue-500 animate-pulse' : 'border-gray-300 text-gray-300'}`}>
                                                     {isPast ? '✓' : (idx + 1)}
                                                 </div>
 
                                                 <div className={`bg-white rounded-xl border p-4 shadow-sm transition-all
-                                                    ${isActive ? 'border-blue-300 ring-4 ring-blue-50 shadow-md' : 
-                                                      isPast ? 'border-green-200 bg-green-50/30 opacity-80' : 'border-gray-200 bg-gray-50 opacity-60'}`}>
-                                                    
+                                                    ${isActive ? 'border-blue-300 ring-4 ring-blue-50 shadow-md' :
+                                                        isPast ? 'border-green-200 bg-green-50/30 opacity-80' : 'border-gray-200 bg-gray-50 opacity-60'}`}>
+
                                                     <div className="flex justify-between items-start mb-2">
                                                         <h4 className={`font-bold text-lg ${isActive ? 'text-blue-800' : isPast ? 'text-green-800' : 'text-gray-600'}`}>
                                                             {protocol.name}
@@ -767,44 +767,44 @@ const PatientManager: React.FC = () => {
                                                     {isActive && (
                                                         <div className="mt-4 space-y-3 pl-2 border-l-2 border-blue-100">
                                                             {
-                                                            (() => {
-                                                                // Initialize cumulative date calculation based on the CURRENT scheduled date
-                                                                const currentDateCalc = timelinePatient.nextScheduledDate ? new Date(timelinePatient.nextScheduledDate) : new Date();
-                                                                
-                                                                return protocol.steps.map((step, stepIdx) => {
-                                                                    const isStepDone = stepIdx < timelinePatient.currentStepIndex;
-                                                                    const isStepCurrent = stepIdx === timelinePatient.currentStepIndex;
-                                                                    
-                                                                    // Calculate estimated date for future steps in ACTIVE protocol
-                                                                    let displayDate = null;
-                                                                    if (isStepCurrent) {
-                                                                         // Current step is exactly the nextScheduledDate
-                                                                        displayDate = timelinePatient.nextScheduledDate;
-                                                                    } else if (stepIdx > timelinePatient.currentStepIndex && timelinePatient.nextScheduledDate) {
-                                                                        // For future steps, we add the gap to the running total (cumulative)
-                                                                        currentDateCalc.setDate(currentDateCalc.getDate() + step.daysAfterPrevious);
-                                                                        displayDate = currentDateCalc.toISOString().split('T')[0];
-                                                                    }
+                                                                (() => {
+                                                                    // Initialize cumulative date calculation based on the CURRENT scheduled date
+                                                                    const currentDateCalc = timelinePatient.nextScheduledDate ? new Date(timelinePatient.nextScheduledDate) : new Date();
 
-                                                                    return (
-                                                                        <div key={stepIdx} className="flex items-center gap-3 text-sm">
-                                                                            <div className={`w-2 h-2 rounded-full ${isStepDone ? 'bg-green-500' : isStepCurrent ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-                                                                            <div className="flex-1">
-                                                                                <span className={`font-medium ${isStepDone ? 'text-green-700 line-through decoration-green-300' : isStepCurrent ? 'text-blue-700' : 'text-gray-500'}`}>
-                                                                                    {stepIdx + 1}. {step.sutCode}
-                                                                                </span>
-                                                                                <span className="text-xs text-gray-400 ml-2">({step.daysAfterPrevious} gün sonra)</span>
-                                                                            </div>
-                                                                            {displayDate && (
-                                                                                <div className={`text-xs font-bold px-2 py-1 rounded ${isStepCurrent ? 'bg-orange-100 text-orange-700' : 'text-gray-400 bg-gray-100'}`}>
-                                                                                    {isStepCurrent ? 'Planlanan:' : 'Tahmini:'} {formatDate(displayDate)}
+                                                                    return protocol.steps.map((step, stepIdx) => {
+                                                                        const isStepDone = stepIdx < timelinePatient.currentStepIndex;
+                                                                        const isStepCurrent = stepIdx === timelinePatient.currentStepIndex;
+
+                                                                        // Calculate estimated date for future steps in ACTIVE protocol
+                                                                        let displayDate = null;
+                                                                        if (isStepCurrent) {
+                                                                            // Current step is exactly the nextScheduledDate
+                                                                            displayDate = timelinePatient.nextScheduledDate;
+                                                                        } else if (stepIdx > timelinePatient.currentStepIndex && timelinePatient.nextScheduledDate) {
+                                                                            // For future steps, we add the gap to the running total (cumulative)
+                                                                            currentDateCalc.setDate(currentDateCalc.getDate() + step.daysAfterPrevious);
+                                                                            displayDate = currentDateCalc.toISOString().split('T')[0];
+                                                                        }
+
+                                                                        return (
+                                                                            <div key={stepIdx} className="flex items-center gap-3 text-sm">
+                                                                                <div className={`w-2 h-2 rounded-full ${isStepDone ? 'bg-green-500' : isStepCurrent ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                                                                                <div className="flex-1">
+                                                                                    <span className={`font-medium ${isStepDone ? 'text-green-700 line-through decoration-green-300' : isStepCurrent ? 'text-blue-700' : 'text-gray-500'}`}>
+                                                                                        {stepIdx + 1}. {step.sutCode}
+                                                                                    </span>
+                                                                                    <span className="text-xs text-gray-400 ml-2">({step.daysAfterPrevious} gün sonra)</span>
                                                                                 </div>
-                                                                            )}
-                                                                            {isStepDone && <span className="text-xs text-green-600 font-bold">Tamamlandı</span>}
-                                                                        </div>
-                                                                    );
-                                                                });
-                                                            })()
+                                                                                {displayDate && (
+                                                                                    <div className={`text-xs font-bold px-2 py-1 rounded ${isStepCurrent ? 'bg-orange-100 text-orange-700' : 'text-gray-400 bg-gray-100'}`}>
+                                                                                        {isStepCurrent ? 'Planlanan:' : 'Tahmini:'} {formatDate(displayDate)}
+                                                                                    </div>
+                                                                                )}
+                                                                                {isStepDone && <span className="text-xs text-green-600 font-bold">Tamamlandı</span>}
+                                                                            </div>
+                                                                        );
+                                                                    });
+                                                                })()
                                                             }
                                                         </div>
                                                     )}
@@ -819,7 +819,7 @@ const PatientManager: React.FC = () => {
                                                     {/* Info for Future Protocols */}
                                                     {isFuture && (
                                                         <div className="mt-2 text-xs text-gray-500 italic">
-                                                            Bu protokol, önceki süreç tamamlandıktan {timelinePatient.interProtocolGapDays || 10} gün sonra başlayacaktır.
+                                                            Bu protokol, önceki süreç tamamlandıktan {timelinePatient.interProtocolGapDays || 11} gün sonra başlayacaktır.
                                                         </div>
                                                     )}
                                                 </div>
@@ -830,7 +830,7 @@ const PatientManager: React.FC = () => {
                             )}
                         </div>
                         <div className="p-4 bg-gray-50 border-t border-gray-200 text-right">
-                             <button onClick={() => setTimelinePatient(null)} className="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900">Kapat</button>
+                            <button onClick={() => setTimelinePatient(null)} className="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900">Kapat</button>
                         </div>
                     </div>
                 </div>
@@ -839,7 +839,7 @@ const PatientManager: React.FC = () => {
             {/* History Modal */}
             {viewingHistoryPatient && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-                     <div className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                    <div className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                             <div>
                                 <h3 className="text-xl font-bold text-gray-800">Hasta İşlem Geçmişi</h3>
@@ -847,7 +847,7 @@ const PatientManager: React.FC = () => {
                             </div>
                             <button onClick={() => setViewingHistoryPatient(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                         </div>
-                        
+
                         <div className="p-6 overflow-y-auto flex-1 bg-slate-50 space-y-4">
                             {historyEntries.length === 0 ? (
                                 <div className="text-center text-gray-400 py-10">
@@ -876,8 +876,8 @@ const PatientManager: React.FC = () => {
                                             <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
                                                 <span className="font-bold text-gray-700">{new Date(entry.date).toLocaleDateString('tr-TR')}</span>
                                                 <div className="flex items-center gap-3">
-                                                    <span className="text-xs text-gray-500">ID: {entry.id.slice(0,8)}...</span>
-                                                    <button 
+                                                    <span className="text-xs text-gray-500">ID: {entry.id.slice(0, 8)}...</span>
+                                                    <button
                                                         type="button"
                                                         onClick={(e) => handleDeleteHistoryEntry(entry.id, e)}
                                                         className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded"
@@ -918,7 +918,7 @@ const PatientManager: React.FC = () => {
                                 })
                             )}
                         </div>
-                     </div>
+                    </div>
                 </div>
             )}
 
@@ -934,12 +934,12 @@ const PatientManager: React.FC = () => {
                             <button onClick={() => setIsProcessModalOpen(false)} className="text-orange-400 hover:text-orange-600 text-xl">&times;</button>
                         </div>
                         <form onSubmit={handleSaveProcessDates} className="p-6 space-y-4">
-                            
+
                             {/* PROTOCOL SELECTOR FOR MULTI-PROTOCOL PATIENTS */}
                             {processModalAssignedProtocols.length > 0 && (
                                 <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 mb-2">
                                     <label className="block text-xs font-bold text-orange-800 mb-1">İşlem Yapılan Protokol</label>
-                                    <select 
+                                    <select
                                         className="w-full border-orange-200 border rounded p-2 text-sm bg-white"
                                         value={processModalData.selectedProtocolId}
                                         onChange={(e) => handleProcessProtocolChange(e.target.value)}
@@ -954,12 +954,12 @@ const PatientManager: React.FC = () => {
 
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Çalışma Başlangıcı</label>
-                                <input 
-                                    type="date" 
+                                <input
+                                    type="date"
                                     min={processModalPatient?.admissionDate}
-                                    className="w-full border p-2 rounded focus:ring-blue-500 outline-none text-sm" 
-                                    value={processModalData.workStartDate} 
-                                    onChange={e => setProcessModalData({...processModalData, workStartDate: e.target.value})} 
+                                    className="w-full border p-2 rounded focus:ring-blue-500 outline-none text-sm"
+                                    value={processModalData.workStartDate}
+                                    onChange={e => setProcessModalData({ ...processModalData, workStartDate: e.target.value })}
                                 />
                                 {processModalPatient?.admissionDate && (
                                     <p className="text-[10px] text-gray-400 mt-0.5">Kayıt: {formatDate(processModalPatient.admissionDate)}</p>
@@ -967,40 +967,40 @@ const PatientManager: React.FC = () => {
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Data Paylaşım</label>
-                                <input type="date" className="w-full border p-2 rounded focus:ring-blue-500 outline-none text-sm" 
-                                    value={processModalData.dataShareDate} onChange={e => setProcessModalData({...processModalData, dataShareDate: e.target.value})} />
+                                <input type="date" className="w-full border p-2 rounded focus:ring-blue-500 outline-none text-sm"
+                                    value={processModalData.dataShareDate} onChange={e => setProcessModalData({ ...processModalData, dataShareDate: e.target.value })} />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Ön Analiz</label>
-                                <input type="date" className="w-full border p-2 rounded focus:ring-blue-500 outline-none text-sm" 
-                                    value={processModalData.preAnalysisDate} onChange={e => setProcessModalData({...processModalData, preAnalysisDate: e.target.value})} />
+                                <input type="date" className="w-full border p-2 rounded focus:ring-blue-500 outline-none text-sm"
+                                    value={processModalData.preAnalysisDate} onChange={e => setProcessModalData({ ...processModalData, preAnalysisDate: e.target.value })} />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Raporlama</label>
-                                <input type="date" className="w-full border p-2 rounded focus:ring-blue-500 outline-none text-sm" 
-                                    value={processModalData.reportDate} onChange={e => setProcessModalData({...processModalData, reportDate: e.target.value})} />
+                                <input type="date" className="w-full border p-2 rounded focus:ring-blue-500 outline-none text-sm"
+                                    value={processModalData.reportDate} onChange={e => setProcessModalData({ ...processModalData, reportDate: e.target.value })} />
                             </div>
 
                             <div className="pt-2 border-t border-gray-100">
                                 <label className="flex items-center gap-2 cursor-pointer mb-2">
-                                    <input 
-                                        type="checkbox" 
+                                    <input
+                                        type="checkbox"
                                         className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
                                         checked={processModalData.isRepeated}
-                                        onChange={e => setProcessModalData({...processModalData, isRepeated: e.target.checked})}
+                                        onChange={e => setProcessModalData({ ...processModalData, isRepeated: e.target.checked })}
                                     />
                                     <span className="text-sm font-bold text-gray-700">Örnek tekrara girdi mi?</span>
                                 </label>
-                                
+
                                 {processModalData.isRepeated && (
                                     <div className="ml-6 animate-in fade-in slide-in-from-top-1 duration-200">
                                         <label className="block text-xs font-medium text-gray-500 mb-1">Tekrar Çalışmaya Alınma Tarihi</label>
-                                        <input type="date" className="w-full border p-2 rounded focus:ring-orange-500 outline-none text-sm border-orange-200 bg-orange-50" 
-                                            value={processModalData.repeatWorkDate} onChange={e => setProcessModalData({...processModalData, repeatWorkDate: e.target.value})} />
+                                        <input type="date" className="w-full border p-2 rounded focus:ring-orange-500 outline-none text-sm border-orange-200 bg-orange-50"
+                                            value={processModalData.repeatWorkDate} onChange={e => setProcessModalData({ ...processModalData, repeatWorkDate: e.target.value })} />
                                     </div>
                                 )}
                             </div>
-                            
+
                             <div className="pt-4 flex gap-3">
                                 <button type="button" onClick={() => setIsProcessModalOpen(false)} className="flex-1 border p-2 rounded text-gray-600 hover:bg-gray-50">Kapat</button>
                                 <button type="submit" className="flex-1 bg-orange-600 text-white p-2 rounded hover:bg-orange-700 font-medium">Kaydet</button>
@@ -1018,14 +1018,14 @@ const PatientManager: React.FC = () => {
                             <h3 className="text-xl font-bold text-gray-800">{formData.id ? 'Temel Bilgileri Düzenle' : 'Yeni Hasta Kaydı'}</h3>
                             <button onClick={() => setIsFormOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
                         </div>
-                        
+
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Protokol No *</label>
-                                    <input type="text" className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-lg" 
+                                    <input type="text" className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-lg"
                                         placeholder="Örn: M-105/2026"
-                                        value={formData.protocolNo} onChange={e => setFormData({...formData, protocolNo: e.target.value})} required />
+                                        value={formData.protocolNo} onChange={e => setFormData({ ...formData, protocolNo: e.target.value })} required />
                                 </div>
                             </div>
 
@@ -1034,15 +1034,15 @@ const PatientManager: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Doku / Hastalık Tipi</label>
-                                        <input type="text" className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-                                            value={formData.tissueType} onChange={e => setFormData({...formData, tissueType: e.target.value})} />
+                                        <input type="text" className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            value={formData.tissueType} onChange={e => setFormData({ ...formData, tissueType: e.target.value })} />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">İstemi Yapan Uzman</label>
-                                        <select 
+                                        <select
                                             className="w-full border p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                                            value={formData.requestingDoctor} 
-                                            onChange={e => setFormData({...formData, requestingDoctor: e.target.value})}
+                                            value={formData.requestingDoctor}
+                                            onChange={e => setFormData({ ...formData, requestingDoctor: e.target.value })}
                                         >
                                             <option value="">Seçiniz...</option>
                                             {availableDoctors.map((d, i) => <option key={i} value={d}>{d}</option>)}
@@ -1051,9 +1051,9 @@ const PatientManager: React.FC = () => {
 
                                     <div className="md:col-span-2 bg-blue-50 p-4 rounded-lg border border-blue-100">
                                         <label className="block text-sm font-bold text-blue-900 mb-2">Uygulanacak Protokoller (Sıralı)</label>
-                                        
+
                                         <div className="flex gap-2 mb-3">
-                                            <select 
+                                            <select
                                                 className="flex-1 border p-2 rounded text-sm bg-white"
                                                 value={protocolToAddId}
                                                 onChange={e => setProtocolToAddId(e.target.value)}
@@ -1061,8 +1061,8 @@ const PatientManager: React.FC = () => {
                                                 <option value="">Protokol Seçiniz...</option>
                                                 {availableProtocols.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                             </select>
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 onClick={handleAddProtocol}
                                                 className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
                                             >
@@ -1077,8 +1077,8 @@ const PatientManager: React.FC = () => {
                                                         <span className="bg-blue-200 text-blue-800 text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full">{index + 1}</span>
                                                         <span className="text-sm font-medium text-gray-700">{p.name}</span>
                                                     </span>
-                                                    <button 
-                                                        type="button" 
+                                                    <button
+                                                        type="button"
                                                         onClick={() => handleRemoveProtocol(p.id)}
                                                         className="text-red-400 hover:text-red-600 text-xs px-2"
                                                     >
@@ -1092,7 +1092,7 @@ const PatientManager: React.FC = () => {
                                         {selectedProtocols.length > 1 && (
                                             <div className="bg-white p-3 rounded border border-gray-200">
                                                 <label className="block text-xs font-bold text-gray-500 mb-2">Başlangıç Protokolü:</label>
-                                                <select 
+                                                <select
                                                     className="w-full border p-2 rounded text-sm"
                                                     value={startProtocolId}
                                                     onChange={e => setStartProtocolId(e.target.value)}
@@ -1102,16 +1102,16 @@ const PatientManager: React.FC = () => {
                                                 <p className="text-[10px] text-gray-400 mt-1">Süreç bu protokol ile başlayacaktır.</p>
                                             </div>
                                         )}
-                                        
+
                                         <div className="mt-3">
-                                             <label className="block text-xs font-bold text-gray-600 mb-1">Protokoller Arası Bekleme (Gün)</label>
-                                             <input 
-                                                type="number" 
+                                            <label className="block text-xs font-bold text-gray-600 mb-1">Protokoller Arası Bekleme (Gün)</label>
+                                            <input
+                                                type="number"
                                                 className="w-full max-w-[100px] border p-2 rounded text-sm"
                                                 value={formData.interProtocolGapDays}
-                                                onChange={e => setFormData({...formData, interProtocolGapDays: parseInt(e.target.value) || 0})}
-                                             />
-                                             <p className="text-[10px] text-gray-400 mt-1">Bir protokol bittiğinde, diğeri başlamadan önce beklenecek süre.</p>
+                                                onChange={e => setFormData({ ...formData, interProtocolGapDays: parseInt(e.target.value) || 0 })}
+                                            />
+                                            <p className="text-[10px] text-gray-400 mt-1">Bir protokol bittiğinde, diğeri başlamadan önce beklenecek süre.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1121,8 +1121,8 @@ const PatientManager: React.FC = () => {
                                 <h4 className="text-sm font-bold text-gray-900 mb-3 bg-gray-50 p-2 rounded">Kayıt Tarihleri</h4>
                                 <div>
                                     <label className="block text-xs font-medium text-gray-500 mb-1">Geliş Tarihi (Kayıt)</label>
-                                    <input type="date" className="w-full border p-2 rounded focus:ring-blue-500 outline-none text-sm" 
-                                        value={formData.admissionDate} onChange={e => setFormData({...formData, admissionDate: e.target.value})} />
+                                    <input type="date" className="w-full border p-2 rounded focus:ring-blue-500 outline-none text-sm"
+                                        value={formData.admissionDate} onChange={e => setFormData({ ...formData, admissionDate: e.target.value })} />
                                     <p className="text-xs text-gray-400 mt-1">Diagnoseq, Çalışma Başlangıcı gibi detay tarihleri hasta listesinden "Süreç Takip" butonuna tıklayarak girebilirsiniz.</p>
                                 </div>
                             </div>
@@ -1132,7 +1132,7 @@ const PatientManager: React.FC = () => {
                                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
                                     İptal
                                 </button>
-                                <button type="submit" 
+                                <button type="submit"
                                     className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm">
                                     {formData.id ? 'Güncelle' : 'Kaydet'}
                                 </button>
@@ -1150,11 +1150,11 @@ const PatientManager: React.FC = () => {
                         <form onSubmit={handleSaveStatus} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">İşlem Tarihi</label>
-                                <input 
-                                    type="date" 
+                                <input
+                                    type="date"
                                     className="w-full border p-2 rounded bg-white outline-none focus:ring-2 focus:ring-blue-500"
                                     value={statusFormData.actionDate}
-                                    onChange={e => setStatusFormData({...statusFormData, actionDate: e.target.value})}
+                                    onChange={e => setStatusFormData({ ...statusFormData, actionDate: e.target.value })}
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Yatışın verildiği veya tekrar aktif olduğu tarihi seçiniz.</p>
@@ -1162,10 +1162,10 @@ const PatientManager: React.FC = () => {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Yeni Durum</label>
-                                <select 
+                                <select
                                     className="w-full border p-2 rounded bg-white outline-none focus:ring-2 focus:ring-blue-500"
                                     value={statusFormData.newStatus}
-                                    onChange={e => setStatusFormData({...statusFormData, newStatus: e.target.value as any})}
+                                    onChange={e => setStatusFormData({ ...statusFormData, newStatus: e.target.value as any })}
                                 >
                                     <option value="active">Aktif (Devam Ediyor)</option>
                                     <option value="hospitalized">Servis Yatışı (Durdur)</option>
@@ -1174,14 +1174,14 @@ const PatientManager: React.FC = () => {
                                     <option value="completed">Tamamlandı</option>
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama / Sebep</label>
-                                <textarea 
+                                <textarea
                                     className="w-full border p-2 rounded h-24 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Örn: Yoğun bakıma alındı, işlemler durduruldu."
                                     value={statusFormData.reason}
-                                    onChange={e => setStatusFormData({...statusFormData, reason: e.target.value})}
+                                    onChange={e => setStatusFormData({ ...statusFormData, reason: e.target.value })}
                                     required={statusFormData.newStatus !== 'active' && statusFormData.newStatus !== 'completed'}
                                 ></textarea>
                             </div>
