@@ -2,16 +2,16 @@ import { Patient, SUTEntry, Tender, Invoice, SUTCode, LogEntry, User, TestProtoc
 import { INITIAL_TENDER, MOCK_SUT_CODES } from '../constants';
 
 const KEYS = {
-  PATIENTS: 'medisut_patients',
-  ENTRIES: 'medisut_entries',
-  TENDERS: 'medisut_tenders',
-  INVOICES: 'medisut_invoices',
-  SUT_CODES: 'medisut_sut_codes',
-  DOCTORS: 'medisut_doctors',
-  PROTOCOLS: 'medisut_protocols', 
-  LOGS: 'medisut_logs',
-  USERS: 'medisut_users',
-  CURRENT_USER: 'medisut_current_user_session'
+    PATIENTS: 'medisut_patients',
+    ENTRIES: 'medisut_entries',
+    TENDERS: 'medisut_tenders',
+    INVOICES: 'medisut_invoices',
+    SUT_CODES: 'medisut_sut_codes',
+    DOCTORS: 'medisut_doctors',
+    PROTOCOLS: 'medisut_protocols',
+    LOGS: 'medisut_logs',
+    USERS: 'medisut_users',
+    CURRENT_USER: 'medisut_current_user_session'
 };
 
 // --- SAFE UUID GENERATOR ---
@@ -19,7 +19,7 @@ export const generateId = () => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
         return crypto.randomUUID();
     }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
     });
@@ -27,12 +27,12 @@ export const generateId = () => {
 
 // Helpers
 const get = <T>(key: string, defaultVal: T): T => {
-  const item = localStorage.getItem(key);
-  return item ? JSON.parse(item) : defaultVal;
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultVal;
 };
 
 const set = <T>(key: string, val: T) => {
-  localStorage.setItem(key, JSON.stringify(val));
+    localStorage.setItem(key, JSON.stringify(val));
 };
 
 // --- BACKUP / RESTORE FOR DRIVE ---
@@ -53,15 +53,15 @@ export const getAllData = () => {
 export const restoreAllData = (data: any) => {
     if (!data) return false;
     try {
-        if(data.patients) set(KEYS.PATIENTS, data.patients);
-        if(data.entries) set(KEYS.ENTRIES, data.entries);
-        if(data.tenders) set(KEYS.TENDERS, data.tenders);
-        if(data.invoices) set(KEYS.INVOICES, data.invoices);
-        if(data.sutCodes) set(KEYS.SUT_CODES, data.sutCodes);
-        if(data.doctors) set(KEYS.DOCTORS, data.doctors);
-        if(data.protocols) set(KEYS.PROTOCOLS, data.protocols);
-        if(data.logs) set(KEYS.LOGS, data.logs);
-        if(data.users) set(KEYS.USERS, data.users);
+        if (data.patients) set(KEYS.PATIENTS, data.patients);
+        if (data.entries) set(KEYS.ENTRIES, data.entries);
+        if (data.tenders) set(KEYS.TENDERS, data.tenders);
+        if (data.invoices) set(KEYS.INVOICES, data.invoices);
+        if (data.sutCodes) set(KEYS.SUT_CODES, data.sutCodes);
+        if (data.doctors) set(KEYS.DOCTORS, data.doctors);
+        if (data.protocols) set(KEYS.PROTOCOLS, data.protocols);
+        if (data.logs) set(KEYS.LOGS, data.logs);
+        if (data.users) set(KEYS.USERS, data.users);
         return true;
     } catch (e) {
         console.error("Veri geri yükleme hatası", e);
@@ -138,11 +138,11 @@ export const addLog = (action: string, details: string) => {
     try {
         const logs = getLogs();
         const currentUser = getCurrentUser();
-        
+
         const newLog: LogEntry = {
             id: generateId(),
             timestamp: new Date().toISOString(),
-            user: currentUser ? currentUser.fullName : 'Sistem/Misafir', 
+            user: currentUser ? currentUser.fullName : 'Sistem/Misafir',
             action,
             details
         };
@@ -157,28 +157,28 @@ export const addLog = (action: string, details: string) => {
 // --- PATIENTS ---
 export const getPatients = (): Patient[] => get(KEYS.PATIENTS, []);
 export const savePatient = (patient: Patient) => {
-  const patients = getPatients();
-  const index = patients.findIndex(p => p.id === patient.id);
-  let isUpdate = false;
+    const patients = getPatients();
+    const index = patients.findIndex(p => p.id === patient.id);
+    let isUpdate = false;
 
-  if (index >= 0) {
-    patients[index] = patient;
-    isUpdate = true;
-  } else {
-    // New patient - Initialize Protocol Step 0 if exists
-    if (patient.activeProtocolId) {
-        patient.currentStepIndex = 0;
-        patient.nextScheduledDate = patient.admissionDate;
-        patient.nextScheduledNote = "1. Adım (Başlangıç) Bekleniyor";
+    if (index >= 0) {
+        patients[index] = patient;
+        isUpdate = true;
+    } else {
+        // New patient - Initialize Protocol Step 0 if exists
+        if (patient.activeProtocolId) {
+            patient.currentStepIndex = 0;
+            patient.nextScheduledDate = patient.admissionDate;
+            patient.nextScheduledNote = "1. Adım (Başlangıç) Bekleniyor";
+        }
+        patients.push(patient);
     }
-    patients.push(patient);
-  }
-  set(KEYS.PATIENTS, patients);
-  
-  addLog(
-      isUpdate ? 'HASTA_GUNCELLEME' : 'HASTA_KAYIT', 
-      `Protokol: ${patient.protocolNo} (${patient.testName}) ${isUpdate ? 'güncellendi' : 'kaydedildi'}.`
-  );
+    set(KEYS.PATIENTS, patients);
+
+    addLog(
+        isUpdate ? 'HASTA_GUNCELLEME' : 'HASTA_KAYIT',
+        `Protokol: ${patient.protocolNo} (${patient.testName}) ${isUpdate ? 'güncellendi' : 'kaydedildi'}.`
+    );
 };
 
 export const deletePatient = (patientId: string) => {
@@ -187,11 +187,11 @@ export const deletePatient = (patientId: string) => {
     if (patientToDelete) {
         const updatedPatients = patients.filter(p => p.id !== patientId);
         set(KEYS.PATIENTS, updatedPatients);
-        
+
         const entries = getEntries();
         const updatedEntries = entries.filter(e => e.patientId !== patientId);
         set(KEYS.ENTRIES, updatedEntries);
-        
+
         addLog('HASTA_SILME', `Hasta Protokol: ${patientToDelete.protocolNo} silindi.`);
     }
 };
@@ -199,119 +199,119 @@ export const deletePatient = (patientId: string) => {
 // --- ENTRIES & SMART SCHEDULING ---
 export const getEntries = (): SUTEntry[] => get(KEYS.ENTRIES, []);
 export const saveEntry = (entry: SUTEntry) => {
-  const entries = getEntries();
-  entries.push(entry);
-  set(KEYS.ENTRIES, entries);
-  
-  const patients = getPatients();
-  const pIndex = patients.findIndex(p => p.id === entry.patientId);
-  let protocolInfo = 'Bilinmeyen Hasta';
-  
-  if (pIndex >= 0) {
-    const patient = patients[pIndex];
-    patient.lastEntryDate = entry.date;
-    protocolInfo = patient.protocolNo;
+    const entries = getEntries();
+    entries.push(entry);
+    set(KEYS.ENTRIES, entries);
 
-    // --- SMART PROTOCOL LOGIC ---
-    if (patient.activeProtocolId) {
-        const protocols = getTestProtocols();
-        const protocol = protocols.find(p => p.id === patient.activeProtocolId);
-        
-        if (protocol && patient.currentStepIndex < protocol.steps.length) {
-            const currentStep = protocol.steps[patient.currentStepIndex];
-            
-            const performedRequiredCode = entry.selectedCodes.some(c => c.code === currentStep.sutCode);
+    const patients = getPatients();
+    const pIndex = patients.findIndex(p => p.id === entry.patientId);
+    let protocolInfo = 'Bilinmeyen Hasta';
 
-            if (performedRequiredCode) {
-                const nextStepIndex = patient.currentStepIndex + 1;
-                patient.currentStepIndex = nextStepIndex;
+    if (pIndex >= 0) {
+        const patient = patients[pIndex];
+        patient.lastEntryDate = entry.date;
+        protocolInfo = patient.protocolNo;
 
-                if (nextStepIndex < protocol.steps.length) {
-                    const nextStep = protocol.steps[nextStepIndex];
-                    
-                    const nextDate = new Date(entry.date);
-                    nextDate.setDate(nextDate.getDate() + nextStep.daysAfterPrevious);
-                    
-                    patient.nextScheduledDate = nextDate.toISOString().split('T')[0];
-                    patient.nextScheduledNote = `${nextStepIndex + 1}. Adım: ${nextStep.description || nextStep.sutCode}`;
-                } else {
-                    let nextProtocolId = null;
-                    if (patient.assignedProtocolIds && patient.assignedProtocolIds.length > 0) {
-                        const currentProtoIndex = patient.assignedProtocolIds.indexOf(patient.activeProtocolId);
-                        if (currentProtoIndex >= 0 && currentProtoIndex < patient.assignedProtocolIds.length - 1) {
-                            nextProtocolId = patient.assignedProtocolIds[currentProtoIndex + 1];
-                        }
-                    }
+        // --- SMART PROTOCOL LOGIC ---
+        if (patient.activeProtocolId) {
+            const protocols = getTestProtocols();
+            const protocol = protocols.find(p => p.id === patient.activeProtocolId);
 
-                    if (nextProtocolId) {
-                        const nextProtocol = protocols.find(p => p.id === nextProtocolId);
-                        const gapDays = patient.interProtocolGapDays || 10;
-                        
+            if (protocol && patient.currentStepIndex < protocol.steps.length) {
+                const currentStep = protocol.steps[patient.currentStepIndex];
+
+                const performedRequiredCode = entry.selectedCodes.some(c => c.code === currentStep.sutCode);
+
+                if (performedRequiredCode) {
+                    const nextStepIndex = patient.currentStepIndex + 1;
+                    patient.currentStepIndex = nextStepIndex;
+
+                    if (nextStepIndex < protocol.steps.length) {
+                        const nextStep = protocol.steps[nextStepIndex];
+
                         const nextDate = new Date(entry.date);
-                        nextDate.setDate(nextDate.getDate() + gapDays);
-                        
-                        patient.activeProtocolId = nextProtocolId;
-                        patient.currentStepIndex = 0; 
-                        
+                        nextDate.setDate(nextDate.getDate() + nextStep.daysAfterPrevious);
+
                         patient.nextScheduledDate = nextDate.toISOString().split('T')[0];
-                        patient.nextScheduledNote = `Geçiş: ${nextProtocol?.name || 'Yeni Protokol'} (Bekleme Süresi)`;
+                        patient.nextScheduledNote = `${nextStepIndex + 1}. Adım: ${nextStep.description || nextStep.sutCode}`;
                     } else {
-                        patient.nextScheduledDate = undefined;
-                        patient.nextScheduledNote = "Tüm Protokoller Tamamlandı";
-                        patient.status = 'completed';
+                        let nextProtocolId = null;
+                        if (patient.assignedProtocolIds && patient.assignedProtocolIds.length > 0) {
+                            const currentProtoIndex = patient.assignedProtocolIds.indexOf(patient.activeProtocolId);
+                            if (currentProtoIndex >= 0 && currentProtoIndex < patient.assignedProtocolIds.length - 1) {
+                                nextProtocolId = patient.assignedProtocolIds[currentProtoIndex + 1];
+                            }
+                        }
+
+                        if (nextProtocolId) {
+                            const nextProtocol = protocols.find(p => p.id === nextProtocolId);
+                            const gapDays = patient.interProtocolGapDays || 11;
+
+                            const nextDate = new Date(entry.date);
+                            nextDate.setDate(nextDate.getDate() + gapDays);
+
+                            patient.activeProtocolId = nextProtocolId;
+                            patient.currentStepIndex = 0;
+
+                            patient.nextScheduledDate = nextDate.toISOString().split('T')[0];
+                            patient.nextScheduledNote = `Geçiş: ${nextProtocol?.name || 'Yeni Protokol'} (Bekleme Süresi)`;
+                        } else {
+                            patient.nextScheduledDate = undefined;
+                            patient.nextScheduledNote = "Tüm Protokoller Tamamlandı";
+                            patient.status = 'completed';
+                        }
                     }
                 }
             }
-        }
-    } else {
-        let maxNextDays = 0;
-        entry.selectedCodes.forEach(c => {
-            if (c.nextActionInDays && c.nextActionInDays > maxNextDays) {
-                maxNextDays = c.nextActionInDays;
-            }
-        });
-
-        if (maxNextDays > 0) {
-            const nextDate = new Date(entry.date);
-            nextDate.setDate(nextDate.getDate() + maxNextDays);
-            patient.nextScheduledDate = nextDate.toISOString().split('T')[0];
-            patient.nextScheduledNote = `${maxNextDays} gün sonraki işlem periyodu`;
         } else {
-            patient.nextScheduledDate = undefined;
-            patient.nextScheduledNote = undefined;
+            let maxNextDays = 0;
+            entry.selectedCodes.forEach(c => {
+                if (c.nextActionInDays && c.nextActionInDays > maxNextDays) {
+                    maxNextDays = c.nextActionInDays;
+                }
+            });
+
+            if (maxNextDays > 0) {
+                const nextDate = new Date(entry.date);
+                nextDate.setDate(nextDate.getDate() + maxNextDays);
+                patient.nextScheduledDate = nextDate.toISOString().split('T')[0];
+                patient.nextScheduledNote = `${maxNextDays} gün sonraki işlem periyodu`;
+            } else {
+                patient.nextScheduledDate = undefined;
+                patient.nextScheduledNote = undefined;
+            }
         }
+
+        set(KEYS.PATIENTS, patients);
     }
 
-    set(KEYS.PATIENTS, patients);
-  }
-
-  addLog(
-      'SUT_GIRISI', 
-      `Protokol: ${protocolInfo} için ${entry.totalPoints} puanlık işlem girildi.`
-  );
+    addLog(
+        'SUT_GIRISI',
+        `Protokol: ${protocolInfo} için ${entry.totalPoints} puanlık işlem girildi.`
+    );
 };
 
 export const deleteEntry = (entryId: string) => {
     const entries = getEntries();
     const entryToDelete = entries.find(e => e.id === entryId);
-    
+
     if (entryToDelete) {
         const updatedEntries = entries.filter(e => e.id !== entryId);
         set(KEYS.ENTRIES, updatedEntries);
-        addLog('SUT_SILME', `Giriş ID: ${entryId.substring(0,8)}... silindi.`);
+        addLog('SUT_SILME', `Giriş ID: ${entryId.substring(0, 8)}... silindi.`);
     }
 };
 
 export const getEntriesByPatient = (patientId: string): SUTEntry[] => {
-  return getEntries().filter(e => e.patientId === patientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return getEntries().filter(e => e.patientId === patientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
 // --- TENDERS ---
 export const initializeTenders = () => {
-  const tenders = get<Tender[]>(KEYS.TENDERS, []);
-  if (tenders.length === 0) {
-    set(KEYS.TENDERS, [structuredClone(INITIAL_TENDER)]);
-  }
+    const tenders = get<Tender[]>(KEYS.TENDERS, []);
+    if (tenders.length === 0) {
+        set(KEYS.TENDERS, [structuredClone(INITIAL_TENDER)]);
+    }
 };
 
 export const getTenders = (): Tender[] => get<Tender[]>(KEYS.TENDERS, []);
@@ -321,7 +321,7 @@ const recalculateTenderSpent = (tenderId: string) => {
     const totalSpent = invoices
         .filter(inv => inv.tenderId === tenderId)
         .reduce((sum, inv) => sum + inv.amount, 0);
-    
+
     const tenders = getTenders();
     const tIndex = tenders.findIndex(t => t.id === tenderId);
     if (tIndex >= 0) {
@@ -331,28 +331,28 @@ const recalculateTenderSpent = (tenderId: string) => {
 };
 
 export const saveTender = (tender: Tender) => {
-  const tenders = getTenders();
-  const index = tenders.findIndex(t => t.id === tender.id);
-  if (index >= 0) tenders[index] = tender;
-  else tenders.push(tender);
-  set(KEYS.TENDERS, tenders);
+    const tenders = getTenders();
+    const index = tenders.findIndex(t => t.id === tender.id);
+    if (index >= 0) tenders[index] = tender;
+    else tenders.push(tender);
+    set(KEYS.TENDERS, tenders);
 };
 
 // --- INVOICES ---
 export const getInvoices = (): Invoice[] => get(KEYS.INVOICES, []);
 export const saveInvoice = (invoice: Invoice) => {
-  const invoices = getInvoices();
-  invoices.push(invoice);
-  set(KEYS.INVOICES, invoices);
-  
-  recalculateTenderSpent(invoice.tenderId);
-  addLog('FATURA_KESIM', `${invoice.amount} TL tutarında fatura eklendi: ${invoice.description}`);
+    const invoices = getInvoices();
+    invoices.push(invoice);
+    set(KEYS.INVOICES, invoices);
+
+    recalculateTenderSpent(invoice.tenderId);
+    addLog('FATURA_KESIM', `${invoice.amount} TL tutarında fatura eklendi: ${invoice.description}`);
 };
 
 export const deleteInvoice = (invoiceId: string) => {
     const invoices = getInvoices();
     const invoice = invoices.find(i => i.id === invoiceId);
-    
+
     if (invoice) {
         const updatedInvoices = invoices.filter(i => i.id !== invoiceId);
         set(KEYS.INVOICES, updatedInvoices);
@@ -363,8 +363,8 @@ export const deleteInvoice = (invoiceId: string) => {
 
 // --- SUT CODES ---
 export const getSUTCodes = (): SUTCode[] => {
-  const stored = get<SUTCode[] | null>(KEYS.SUT_CODES, null);
-  return stored || MOCK_SUT_CODES;
+    const stored = get<SUTCode[] | null>(KEYS.SUT_CODES, null);
+    return stored || MOCK_SUT_CODES;
 };
 
 export const saveSUTCode = (code: SUTCode) => {

@@ -4,22 +4,22 @@ export interface SUTCode {
   description: string;
   points: number;
   price: number;
-  relatedTestName?: string; 
+  relatedTestName?: string;
   nextActionInDays?: number; // Deprecated in favor of Protocol Steps, kept for legacy
 }
 
 export interface TestStep {
-    stepNumber: number;
-    sutCode: string; // The code required for this step
-    sutDescription?: string; // Helper for UI
-    daysAfterPrevious: number; // How many days after the PREVIOUS step should this happen?
-    description?: string; // Internal note like "1. Doz", "Kontrol", etc.
+  stepNumber: number;
+  sutCode: string; // The code required for this step
+  sutDescription?: string; // Helper for UI
+  daysAfterPrevious: number; // How many days after the PREVIOUS step should this happen?
+  description?: string; // Internal note like "1. Doz", "Kontrol", etc.
 }
 
 export interface TestProtocol {
-    id: string;
-    name: string; // e.g. "Genetik Tarama Paneli"
-    steps: TestStep[];
+  id: string;
+  name: string; // e.g. "Genetik Tarama Paneli"
+  steps: TestStep[];
 }
 
 export interface SUTEntry {
@@ -37,14 +37,14 @@ export type PatientStatus = 'active' | 'archived' | 'completed' | 'ex' | 'hospit
 
 // New interface for tracking dates specific to a protocol
 export interface ProtocolProcess {
-    protocolId: string;
-    protocolName: string; // Cached name for display
-    workStartDate?: string;
-    dataShareDate?: string;
-    preAnalysisDate?: string;
-    reportDate?: string;
-    isRepeated?: boolean;
-    repeatWorkDate?: string;
+  protocolId: string;
+  protocolName: string; // Cached name for display
+  workStartDate?: string;
+  dataShareDate?: string;
+  preAnalysisDate?: string;
+  reportDate?: string;
+  isRepeated?: boolean;
+  repeatWorkDate?: string;
 }
 
 export interface Patient {
@@ -53,16 +53,16 @@ export interface Patient {
   tissueType: string;
   testName: string; // Display name of the CURRENT protocol or combined info
   requestingDoctor: string;
-  
+
   admissionDate: string;
   diagnoseqSubmissionDate?: string; // Deprecated
-  
+
   // Legacy top-level dates (kept for backward compatibility, but UI will prefer protocolProcesses)
   workStartDate?: string;
   dataShareDate?: string;
   preAnalysisDate?: string;
   reportDate?: string;
-  isRepeated?: boolean; 
+  isRepeated?: boolean;
   repeatWorkDate?: string;
 
   // New Structure for Multi-Protocol Date Tracking
@@ -73,13 +73,13 @@ export interface Patient {
   // Protocol Tracking
   activeProtocolId?: string; // The ID of the currently running protocol
   assignedProtocolIds?: string[]; // List of ALL protocols assigned to this patient in order
-  interProtocolGapDays?: number; // Mandatory wait days between protocols (default 10)
-  
+  interProtocolGapDays?: number; // Mandatory wait days between protocols (default 11)
+
   currentStepIndex: number; // 0-based index. 0 = Waiting for Step 1.
-  
+
   entryFrequencyDays: number; // Fallback frequency
   lastEntryDate: string | null;
-  
+
   nextScheduledDate?: string;
   nextScheduledNote?: string;
 
@@ -90,15 +90,15 @@ export interface Patient {
 }
 
 export interface ProtocolQuota {
-    protocolId: string;
-    protocolName: string;
-    quota: number;
+  protocolId: string;
+  protocolName: string;
+  quota: number;
 }
 
 export interface BilledProtocolItem {
-    protocolId: string;
-    protocolName: string;
-    count: number;
+  protocolId: string;
+  protocolName: string;
+  count: number;
 }
 
 export interface Tender {
@@ -123,19 +123,19 @@ export interface Invoice {
 }
 
 export interface LogEntry {
-    id: string;
-    timestamp: string;
-    user: string;
-    action: string;
-    details: string;
+  id: string;
+  timestamp: string;
+  user: string;
+  action: string;
+  details: string;
 }
 
 export interface User {
-    id: string;
-    username: string;
-    password: string;
-    fullName: string;
-    role: 'admin' | 'user';
+  id: string;
+  username: string;
+  password: string;
+  fullName: string;
+  role: 'admin' | 'user';
 }
 
 export enum ViewState {
