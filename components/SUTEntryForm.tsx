@@ -17,7 +17,7 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
     const [selectedPatientId, setSelectedPatientId] = useState<string>(preSelectedPatientId || '');
     const [entryDate, setEntryDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [notes, setNotes] = useState('');
-    
+
     // Basket State
     const [basket, setBasket] = useState<SUTCode[]>([]);
     const [selectedCodeToAddToBasket, setSelectedCodeToAddToBasket] = useState<string>('');
@@ -29,9 +29,9 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
     }, []);
 
     // Derived Data
-    const selectedPatient = useMemo(() => 
-        patients.find(p => p.id === selectedPatientId), 
-    [patients, selectedPatientId]);
+    const selectedPatient = useMemo(() =>
+        patients.find(p => p.id === selectedPatientId),
+        [patients, selectedPatientId]);
 
     // LOGIC: Check if entry date is earlier than nextScheduledDate (Prevent premature entry)
     const isDatePremature = useMemo(() => {
@@ -39,9 +39,9 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
         const scheduled = new Date(selectedPatient.nextScheduledDate);
         const selected = new Date(entryDate);
         // Compare dates (ignoring time)
-        scheduled.setHours(0,0,0,0);
-        selected.setHours(0,0,0,0);
-        
+        scheduled.setHours(0, 0, 0, 0);
+        selected.setHours(0, 0, 0, 0);
+
         return selected < scheduled;
     }, [selectedPatient, entryDate]);
 
@@ -53,7 +53,7 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
     }, [selectedPatient]);
 
     const getStatusLabel = (status: string) => {
-        switch(status) {
+        switch (status) {
             case 'active': return 'Aktif';
             case 'completed': return 'Tamamlandı';
             case 'ex': return 'EX (Vefat)';
@@ -69,7 +69,7 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
         if (!selectedPatient || !selectedPatient.activeProtocolId) return null;
         const protocol = protocols.find(p => p.id === selectedPatient.activeProtocolId);
         if (!protocol) return null;
-        
+
         if (selectedPatient.currentStepIndex < protocol.steps.length) {
             return protocol.steps[selectedPatient.currentStepIndex];
         }
@@ -81,9 +81,9 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
         // If there's a protocol, user can still select ANY code, but we highlight the expected one.
         // If manual test name (legacy), filter by test name.
         if (selectedPatient?.activeProtocolId) {
-            return allSutCodes; 
+            return allSutCodes;
         }
-        
+
         if (!selectedPatient) return [];
         return allSutCodes.filter(c => c.relatedTestName === selectedPatient.testName || !c.relatedTestName);
     }, [allSutCodes, selectedPatient]);
@@ -119,7 +119,7 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
             id: generateId(),
             patientId: selectedPatientId,
             date: entryDate,
-            selectedCodes: basket, 
+            selectedCodes: basket,
             totalPoints,
             totalPrice,
             notes
@@ -145,12 +145,12 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Hasta Seçimi</label>
-                        <select 
+                        <select
                             className="w-full border p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                             value={selectedPatientId}
                             onChange={(e) => {
                                 setSelectedPatientId(e.target.value);
-                                setBasket([]); 
+                                setBasket([]);
                             }}
                         >
                             <option value="">Hasta Seçiniz...</option>
@@ -163,8 +163,8 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">İşlem Tarihi (Onay Tarihi)</label>
-                        <input 
-                            type="date" 
+                        <input
+                            type="date"
                             className="w-full border p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
                             value={entryDate}
                             onChange={e => setEntryDate(e.target.value)}
@@ -181,7 +181,7 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
                         <div>
                             <h3 className="font-bold text-red-800">İşlem Kısıtlaması</h3>
                             <p className="text-sm text-red-700 mt-1">
-                                Bu hasta şu an <b>{getStatusLabel(selectedPatient.status)}</b> durumundadır. 
+                                Bu hasta şu an <b>{getStatusLabel(selectedPatient.status)}</b> durumundadır.
                                 SUT girişi yapabilmek için hasta kartından durumunu tekrar <b>Aktif</b> hale getirmeniz gerekmektedir.
                             </p>
                             {selectedPatient.statusReason && (
@@ -192,7 +192,7 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
                         </div>
                     </div>
                 )}
-                
+
                 {/* DATE PREMATURE ALERT */}
                 {!isEntryBlocked && isDatePremature && selectedPatient && (
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-start gap-3">
@@ -218,7 +218,7 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
                             <p className="font-bold text-gray-800 text-lg">{activeProtocolStep.sutCode}</p>
                             <p className="text-sm text-gray-600">{activeProtocolStep.sutDescription || activeProtocolStep.description}</p>
                         </div>
-                        <button 
+                        <button
                             onClick={() => addCodeToBasket(activeProtocolStep.sutCode)}
                             className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors"
                         >
@@ -227,9 +227,9 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
                     </div>
                 )}
                 {selectedPatient && !activeProtocolStep && selectedPatient.activeProtocolId && !isEntryBlocked && (
-                     <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center text-green-700 font-medium">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center text-green-700 font-medium">
                         ✅ Bu hastanın protokol süreci tamamlanmıştır. Manuel ekleme yapabilirsiniz.
-                     </div>
+                    </div>
                 )}
 
                 <hr className="border-gray-100" />
@@ -237,10 +237,10 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
                 {/* Manual Code Selection */}
                 <div className={`space-y-4 ${isEntryBlocked || isDatePremature ? 'opacity-50 pointer-events-none' : ''}`}>
                     <h3 className="font-semibold text-gray-800">Manuel Ekleme</h3>
-                    
-                    <div className="flex gap-2">
-                        <select 
-                            className="flex-1 border p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <select
+                            className="flex-1 min-w-0 border p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                             value={selectedCodeToAddToBasket}
                             onChange={e => setSelectedCodeToAddToBasket(e.target.value)}
                             disabled={!selectedPatientId || isEntryBlocked}
@@ -252,10 +252,10 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
                                 </option>
                             ))}
                         </select>
-                        <button 
+                        <button
                             onClick={handleAddCode}
                             disabled={!selectedCodeToAddToBasket || isEntryBlocked}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
                         >
                             Ekle
                         </button>
@@ -307,7 +307,7 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
 
                 <div className={`${isEntryBlocked || isDatePremature ? 'opacity-50 pointer-events-none' : ''}`}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Notlar</label>
-                    <textarea 
+                    <textarea
                         className="w-full border p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                         rows={2}
                         placeholder="İşlem ile ilgili notlar..."
@@ -318,13 +318,13 @@ const SUTEntryForm: React.FC<SUTEntryFormProps> = ({ preSelectedPatientId, onCom
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                    <button 
+                    <button
                         onClick={onComplete}
                         className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
                     >
                         İptal
                     </button>
-                    <button 
+                    <button
                         onClick={handleSave}
                         disabled={basket.length === 0 || isEntryBlocked || isDatePremature}
                         className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-lg shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform active:scale-95"
