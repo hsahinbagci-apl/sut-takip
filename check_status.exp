@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+set timeout 60
+set password "z91qhLTbRWg09uSS68"
+set ip "89.252.152.120"
+
+spawn ssh -o StrictHostKeyChecking=no root@$ip
+
+expect "password:"
+send "$password\r"
+
+expect "#"
+send "cd /var/www/sut-takip\r"
+
+expect "#"
+send "git status\r"
+
+expect "#"
+send "exit\r"
+
+expect eof

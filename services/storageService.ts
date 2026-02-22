@@ -245,7 +245,7 @@ export const saveEntry = (entry: SUTEntry) => {
 
                         if (nextProtocolId) {
                             const nextProtocol = protocols.find(p => p.id === nextProtocolId);
-                            const gapDays = patient.interProtocolGapDays || 11;
+                            const gapDays = patient.interProtocolGapDays || 10;
 
                             const nextDate = new Date(entry.date);
                             nextDate.setDate(nextDate.getDate() + gapDays);

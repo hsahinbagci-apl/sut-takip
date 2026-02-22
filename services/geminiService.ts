@@ -1,24 +1,20 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { getSUTCodes } from "./storageService";
 
-const getAIModel = () => {
+const getAI = () => {
     // The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-    const apiKey = process.env.VITE_API_KEY || "";
+    const apiKey = process.env.API_KEY;
 
     if (!apiKey) {
         console.warn("API Key eksik veya bulunamadı. Yapay zeka özellikleri devre dışı.");
         return null;
     }
-    const genAI = new GoogleGenerativeAI(apiKey);
-    return genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
-        generationConfig: { responseMimeType: "application/json" }
-    });
+    return new GoogleGenAI({ apiKey });
 };
 
 export const analyzeMedicalNote = async (note: string): Promise<{ suggestedCodes: string[], summary: string }> => {
-    const model = getAIModel();
-    if (!model) {
+    const ai = getAI();
+    if (!ai) {
         return { suggestedCodes: [], summary: "" };
     }
 
@@ -27,15 +23,7 @@ export const analyzeMedicalNote = async (note: string): Promise<{ suggestedCodes
     const availableCodes = currentCodes.map(c => `${c.code}: ${c.description}`).join('\n');
 
     const prompt = `
-    Aşağıdaki tıbbi notu analiz et ve sonucu JSON formatında döndür.
-    
-    JSON Şeması:
-    {
-      "suggestedCodes": ["string"],
-      "summary": "string"
-    }
-
-    Analiz Kuralları:
+    Aşağıdaki tıbbi notu analiz et.
     1. Verilen SUT kodu listesinden, bu nota en uygun olabilecek SUT kodlarını bul ve kodlarını listele (örn: "530.010").
     2. Notun kısa, resmi bir özetini çıkar.
 
@@ -47,14 +35,30 @@ export const analyzeMedicalNote = async (note: string): Promise<{ suggestedCodes
     `;
 
     try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const response = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        suggestedCodes: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        summary: {
+                            type: Type.STRING
+                        }
+                    }
+                }
+            }
+        });
 
-        const data = JSON.parse(text || "{}");
+        const result = JSON.parse(response.text || "{}");
         return {
-            suggestedCodes: data.suggestedCodes || [],
-            summary: data.summary || ""
+            suggestedCodes: result.suggestedCodes || [],
+            summary: result.summary || ""
         };
 
     } catch (error) {

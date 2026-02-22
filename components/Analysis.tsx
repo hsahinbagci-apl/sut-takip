@@ -14,6 +14,8 @@ interface FlatProcessRow {
     reportDate?: string;
     isRepeated?: boolean;
     repeatWorkDate?: string;
+    isRepeatedSecond?: boolean;
+    repeatWorkDateSecond?: string;
     status: string;
     protocolName?: string; // Specific protocol name
 }
@@ -25,7 +27,7 @@ const Analysis: React.FC = () => {
     useEffect(() => {
         const data = getPatients();
         setPatients(data);
-        
+
         // Flatten patients into process rows
         const rows: FlatProcessRow[] = [];
         data.forEach(p => {
@@ -43,6 +45,8 @@ const Analysis: React.FC = () => {
                         reportDate: proc.reportDate,
                         isRepeated: proc.isRepeated,
                         repeatWorkDate: proc.repeatWorkDate,
+                        isRepeatedSecond: proc.isRepeatedSecond,
+                        repeatWorkDateSecond: proc.repeatWorkDateSecond,
                         status: p.status,
                         protocolName: proc.protocolName
                     });
@@ -60,23 +64,25 @@ const Analysis: React.FC = () => {
                     reportDate: p.reportDate,
                     isRepeated: p.isRepeated,
                     repeatWorkDate: p.repeatWorkDate,
+                    isRepeatedSecond: p.isRepeatedSecond,
+                    repeatWorkDateSecond: p.repeatWorkDateSecond,
                     status: p.status,
                     protocolName: 'Genel'
                 });
             }
         });
-        
+
         // Sort by Admission Date descending
         rows.sort((a, b) => new Date(b.admissionDate).getTime() - new Date(a.admissionDate).getTime());
         setFlatRows(rows);
     }, []);
 
     // Statistics Calculation
-    const totalPatients = patients.length; // Still counting unique patients for high level stats
-    
-    // Explicitly casting status checks in case of type inference issues or legacy data
-    const activePatients = patients.filter(p => p.status === 'active').length;
-    
+    const totalPatients = flatRows.length; // Count total processes instead of unique patients
+
+    // Count active processes
+    const activePatients = flatRows.filter(r => r.status === 'active').length;
+
     const reportedProcesses = flatRows.filter(r => r.reportDate).length;
     const dataSharedProcesses = flatRows.filter(r => r.dataShareDate).length;
     const preAnalysisProcesses = flatRows.filter(r => r.preAnalysisDate).length;
@@ -113,7 +119,7 @@ const Analysis: React.FC = () => {
 
         // CSV Header
         let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // Add BOM for Excel UTF-8 support
-        csvContent += "Protokol No;Giriş Tarihi;Test / Protokol;Çalışma Başlangıcı;Data Paylaşım;Ön Analiz;Raporlama;Durum;Tekrar?\n";
+        csvContent += "Protokol No;Giriş Tarihi;Test / Protokol;Çalışma Başlangıcı;Data Paylaşım;Ön Analiz;Raporlama;Durum;1. Tekrar?;1. Tekrar Tarihi;2. Tekrar?;2. Tekrar Tarihi\n";
 
         // CSV Rows
         flatRows.forEach(r => {
@@ -125,11 +131,14 @@ const Analysis: React.FC = () => {
                 formatDate(r.dataShareDate),
                 formatDate(r.preAnalysisDate),
                 formatDate(r.reportDate),
-                r.status === 'ex' ? 'EX' : 
-                r.status === 'hospitalized' ? 'Yatışta' : 
-                r.status === 'paused' ? 'Durdu' : 
-                r.status === 'completed' ? 'Tamamlandı' : 'Aktif',
-                r.isRepeated ? 'Evet' : 'Hayır'
+                r.status === 'ex' ? 'EX' :
+                    r.status === 'hospitalized' ? 'Yatışta' :
+                        r.status === 'paused' ? 'Durdu' :
+                            r.status === 'completed' ? 'Tamamlandı' : 'Aktif',
+                r.isRepeated ? 'Evet' : 'Hayır',
+                r.isRepeated ? formatDate(r.repeatWorkDate) : '-',
+                r.isRepeatedSecond ? 'Evet' : 'Hayır',
+                r.isRepeatedSecond ? formatDate(r.repeatWorkDateSecond) : '-'
             ].join(';');
             csvContent += row + "\n";
         });
@@ -156,14 +165,14 @@ const Analysis: React.FC = () => {
             {/* Statistics Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Toplam Hasta</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase">Toplam Süreç</p>
                     <p className="text-2xl font-bold text-blue-600">{totalPatients}</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Aktif Hasta</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase">Aktif Süreç</p>
                     <p className="text-2xl font-bold text-emerald-600">{activePatients}</p>
                 </div>
-                
+
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
                     <p className="text-xs font-bold text-gray-500 uppercase">Data Paylaşım (Süreç)</p>
                     <p className="text-2xl font-bold text-indigo-600">{dataSharedProcesses}</p>
@@ -172,12 +181,12 @@ const Analysis: React.FC = () => {
                     <p className="text-xs font-bold text-gray-500 uppercase">Ön Analiz (Süreç)</p>
                     <p className="text-2xl font-bold text-pink-600">{preAnalysisProcesses}</p>
                 </div>
-                
+
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
                     <p className="text-xs font-bold text-gray-500 uppercase">Raporlanan (Süreç)</p>
                     <p className="text-2xl font-bold text-green-600">{reportedProcesses}</p>
                 </div>
-                 <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
                     <p className="text-xs font-bold text-gray-500 uppercase">EX (Vefat)</p>
                     <p className="text-2xl font-bold text-red-600">{exPatients}</p>
                 </div>
@@ -187,7 +196,7 @@ const Analysis: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                     <h3 className="font-bold text-gray-700">Detaylı Süreç Tablosu (Protokol Bazlı)</h3>
-                    <button 
+                    <button
                         onClick={handleExportExcel}
                         className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
                     >

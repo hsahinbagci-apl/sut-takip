@@ -19,7 +19,7 @@ const Dashboard: React.FC<DashboardProps> = ({ changeView }) => {
 
     // Calculate Due Patients
     const today = new Date();
-    today.setHours(0,0,0,0); 
+    today.setHours(0, 0, 0, 0);
 
     const duePatients = patients.filter(p => {
         // FILTER: Only show active patients in the To-Do list.
@@ -28,23 +28,23 @@ const Dashboard: React.FC<DashboardProps> = ({ changeView }) => {
         // 1. Priority: Check Specific Scheduled Date (Smart Protocol)
         if (p.nextScheduledDate) {
             const scheduled = new Date(p.nextScheduledDate);
-            scheduled.setHours(0,0,0,0);
+            scheduled.setHours(0, 0, 0, 0);
             return scheduled <= today;
         }
 
         // 2. Fallback: Generic Frequency
-        if (!p.lastEntryDate) return true; 
+        if (!p.lastEntryDate) return true;
         const lastDate = new Date(p.lastEntryDate);
-        lastDate.setHours(0,0,0,0);
-        
+        lastDate.setHours(0, 0, 0, 0);
+
         const diffTime = Math.abs(today.getTime() - lastDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return diffDays >= p.entryFrequencyDays;
     });
 
     // Quick Stats
-    const activePatientsCount = patients.filter(p => p.status === 'active').length;
-    const hospitalizedCount = patients.filter(p => p.status === 'hospitalized').length;
+    const activePatientsCount = patients.filter(p => p.status === 'active').reduce((acc, p) => p.assignedProtocolIds ? acc + p.assignedProtocolIds.length : acc + 1, 0);
+    const hospitalizedCount = patients.filter(p => p.status === 'hospitalized').reduce((acc, p) => p.assignedProtocolIds ? acc + p.assignedProtocolIds.length : acc + 1, 0);
 
     return (
         <div className="space-y-6">
@@ -57,10 +57,10 @@ const Dashboard: React.FC<DashboardProps> = ({ changeView }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                     <div>
-                        <p className="text-sm text-gray-500 font-medium">Aktif Hasta</p>
+                        <p className="text-sm text-gray-500 font-medium">Aktif Süreç</p>
                         <div className="flex items-baseline gap-2">
-                             <p className="text-3xl font-bold text-gray-800">{activePatientsCount}</p>
-                             {hospitalizedCount > 0 && <span className="text-xs text-purple-600 font-medium">(+{hospitalizedCount} Yatışta)</span>}
+                            <p className="text-3xl font-bold text-gray-800">{activePatientsCount}</p>
+                            {hospitalizedCount > 0 && <span className="text-xs text-purple-600 font-medium">(+{hospitalizedCount} Yatışta)</span>}
                         </div>
                     </div>
                     <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xl">👥</div>
@@ -83,7 +83,7 @@ const Dashboard: React.FC<DashboardProps> = ({ changeView }) => {
                         {duePatients.length} Kişi
                     </span>
                 </div>
-                
+
                 {duePatients.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
                         🎉 Harika! Bugün için bekleyen SUT girişi yok.
@@ -121,7 +121,7 @@ const Dashboard: React.FC<DashboardProps> = ({ changeView }) => {
                                             )}
                                         </td>
                                         <td className="px-6 py-3 text-right">
-                                            <button 
+                                            <button
                                                 onClick={() => changeView(ViewState.SUT_ENTRY, patient.id)}
                                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
                                             >

@@ -45,6 +45,8 @@ export interface ProtocolProcess {
   reportDate?: string;
   isRepeated?: boolean;
   repeatWorkDate?: string;
+  isRepeatedSecond?: boolean;
+  repeatWorkDateSecond?: string;
 }
 
 export interface Patient {
@@ -64,6 +66,8 @@ export interface Patient {
   reportDate?: string;
   isRepeated?: boolean;
   repeatWorkDate?: string;
+  isRepeatedSecond?: boolean;
+  repeatWorkDateSecond?: string;
 
   // New Structure for Multi-Protocol Date Tracking
   protocolProcesses?: ProtocolProcess[];
@@ -73,7 +77,7 @@ export interface Patient {
   // Protocol Tracking
   activeProtocolId?: string; // The ID of the currently running protocol
   assignedProtocolIds?: string[]; // List of ALL protocols assigned to this patient in order
-  interProtocolGapDays?: number; // Mandatory wait days between protocols (default 11)
+  interProtocolGapDays?: number; // Mandatory wait days between protocols (default 10)
 
   currentStepIndex: number; // 0-based index. 0 = Waiting for Step 1.
 

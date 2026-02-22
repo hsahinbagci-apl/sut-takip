@@ -25,6 +25,8 @@ const PatientManager: React.FC = () => {
         reportDate: string;
         isRepeated: boolean;
         repeatWorkDate: string;
+        isRepeatedSecond: boolean;
+        repeatWorkDateSecond: string;
     }>({
         patientId: '',
         protocolNo: '',
@@ -34,7 +36,9 @@ const PatientManager: React.FC = () => {
         preAnalysisDate: '',
         reportDate: '',
         isRepeated: false,
-        repeatWorkDate: ''
+        repeatWorkDate: '',
+        isRepeatedSecond: false,
+        repeatWorkDateSecond: ''
     });
 
     // Status Change Modal State
@@ -239,6 +243,8 @@ const PatientManager: React.FC = () => {
         const reportDate = existingProcess?.reportDate || (initialProtocolId ? '' : patient.reportDate) || '';
         const isRepeated = existingProcess?.isRepeated !== undefined ? existingProcess.isRepeated : (initialProtocolId ? false : !!patient.isRepeated);
         const repeatWorkDate = existingProcess?.repeatWorkDate || (initialProtocolId ? '' : patient.repeatWorkDate) || '';
+        const isRepeatedSecond = existingProcess?.isRepeatedSecond !== undefined ? existingProcess.isRepeatedSecond : (initialProtocolId ? false : !!patient.isRepeatedSecond);
+        const repeatWorkDateSecond = existingProcess?.repeatWorkDateSecond || (initialProtocolId ? '' : patient.repeatWorkDateSecond) || '';
 
         setProcessModalData({
             patientId: patient.id,
@@ -249,7 +255,9 @@ const PatientManager: React.FC = () => {
             preAnalysisDate,
             reportDate,
             isRepeated,
-            repeatWorkDate
+            repeatWorkDate,
+            isRepeatedSecond,
+            repeatWorkDateSecond
         });
         setIsProcessModalOpen(true);
     };
@@ -269,7 +277,9 @@ const PatientManager: React.FC = () => {
             preAnalysisDate: existingProcess?.preAnalysisDate || '',
             reportDate: existingProcess?.reportDate || '',
             isRepeated: !!existingProcess?.isRepeated,
-            repeatWorkDate: existingProcess?.repeatWorkDate || ''
+            repeatWorkDate: existingProcess?.repeatWorkDate || '',
+            isRepeatedSecond: !!existingProcess?.isRepeatedSecond,
+            repeatWorkDateSecond: existingProcess?.repeatWorkDateSecond || ''
         }));
     };
 
@@ -310,7 +320,9 @@ const PatientManager: React.FC = () => {
                 preAnalysisDate: processModalData.preAnalysisDate,
                 reportDate: processModalData.reportDate,
                 isRepeated: processModalData.isRepeated,
-                repeatWorkDate: processModalData.repeatWorkDate
+                repeatWorkDate: processModalData.repeatWorkDate,
+                isRepeatedSecond: processModalData.isRepeatedSecond,
+                repeatWorkDateSecond: processModalData.repeatWorkDateSecond
             };
 
             if (procIndex >= 0) {
@@ -326,6 +338,8 @@ const PatientManager: React.FC = () => {
             updatedPatient.reportDate = processModalData.reportDate;
             updatedPatient.isRepeated = processModalData.isRepeated;
             updatedPatient.repeatWorkDate = processModalData.repeatWorkDate;
+            updatedPatient.isRepeatedSecond = processModalData.isRepeatedSecond;
+            updatedPatient.repeatWorkDateSecond = processModalData.repeatWorkDateSecond;
         }
 
         savePatient(updatedPatient);
@@ -474,22 +488,93 @@ const PatientManager: React.FC = () => {
     const handleExportCSV = () => {
         if (patients.length === 0) return alert('İndirilecek veri yok.');
 
-        let csv = "data:text/csv;charset=utf-8,\uFEFF";
-        csv += "Protokol No;Durum;Test;Uzman;Girilen SUT Kodlari;Notlar;Tekrar?\n";
-
+        // 1. Flatten patients to process rows to match Analysis logic
+        const flatRows: any[] = [];
         filteredPatients.forEach(p => {
-            // Fetch SUT codes for this patient
             const pEntries = getEntriesByPatient(p.id);
+            const rawPoints = pEntries.reduce((acc, entry) => {
+                return acc.concat(entry.selectedCodes.map(sc => sc.points));
+            }, [] as number[]);
 
-            // Format: "Code1 + Code2 | Code3"
-            const sutCodesString = pEntries.map(entry =>
-                entry.selectedCodes.map(sc => sc.code).join(' + ')
-            ).join(' | ');
+            if (p.protocolProcesses && p.protocolProcesses.length > 0) {
+                p.protocolProcesses.forEach(proc => {
+                    flatRows.push({
+                        patientId: p.id,
+                        protocolNo: p.protocolNo,
+                        testName: p.assignedProtocolIds && p.assignedProtocolIds.length > 1 ? `${p.testName} (${proc.protocolName})` : p.testName,
+                        requestingDoctor: p.requestingDoctor,
+                        status: p.status,
+                        notes: p.notes,
+                        workStartDate: proc.workStartDate,
+                        dataShareDate: proc.dataShareDate,
+                        preAnalysisDate: proc.preAnalysisDate,
+                        reportDate: proc.reportDate,
+                        isRepeated: proc.isRepeated,
+                        repeatWorkDate: proc.repeatWorkDate,
+                        isRepeatedSecond: proc.isRepeatedSecond,
+                        repeatWorkDateSecond: proc.repeatWorkDateSecond,
+                        sutPoints: rawPoints
+                    });
+                });
+            } else {
+                flatRows.push({
+                    patientId: p.id,
+                    protocolNo: p.protocolNo,
+                    testName: p.testName,
+                    requestingDoctor: p.requestingDoctor,
+                    status: p.status,
+                    notes: p.notes,
+                    workStartDate: p.workStartDate,
+                    dataShareDate: p.dataShareDate,
+                    preAnalysisDate: p.preAnalysisDate,
+                    reportDate: p.reportDate,
+                    isRepeated: p.isRepeated,
+                    repeatWorkDate: p.repeatWorkDate,
+                    isRepeatedSecond: p.isRepeatedSecond,
+                    repeatWorkDateSecond: p.repeatWorkDateSecond,
+                    sutPoints: rawPoints
+                });
+            }
+        });
 
-            // Clean notes to avoid breaking CSV format
-            const cleanNotes = (p.notes || '').replace(/;/g, ' - ').replace(/\n/g, ' ');
+        // Calculate max SUT points across all FLATTENED processes
+        let maxSutCount = 0;
+        flatRows.forEach(r => {
+            if (r.sutPoints && r.sutPoints.length > maxSutCount) {
+                maxSutCount = r.sutPoints.length;
+            }
+        });
 
-            csv += `${p.protocolNo};${getStatusLabel(p.status)};${p.testName};${p.requestingDoctor};${sutCodesString};${cleanNotes};${p.isRepeated ? 'Evet' : 'Hayır'}\n`;
+        // 2. Build Header
+        let csv = "data:text/csv;charset=utf-8,\uFEFF";
+        let header = "Protokol No;Durum;Test;Uzman;Çalışma Bşl.;Data Pylşm.;Ön Analiz;Raporlama;1. Tekrar?;1. Tekrar Trh.;2. Tekrar?;2. Tekrar Trh.;Notlar";
+        for (let i = 1; i <= maxSutCount; i++) {
+            header += `;SUT Puanı ${i}`;
+        }
+        csv += header + "\n";
+
+        // 3. Build Rows
+        flatRows.forEach(r => {
+            const cleanNotes = (r.notes || '').replace(/;/g, ' - ').replace(/\n/g, ' ');
+            const st = getStatusLabel(r.status);
+
+            const wStart = r.workStartDate ? new Date(r.workStartDate).toLocaleDateString('tr-TR') : '-';
+            const dShare = r.dataShareDate ? new Date(r.dataShareDate).toLocaleDateString('tr-TR') : '-';
+            const pAna = r.preAnalysisDate ? new Date(r.preAnalysisDate).toLocaleDateString('tr-TR') : '-';
+            const rep = r.reportDate ? new Date(r.reportDate).toLocaleDateString('tr-TR') : '-';
+            const rep1 = r.isRepeated ? 'Evet' : 'Hayır';
+            const rep1d = r.isRepeated && r.repeatWorkDate ? new Date(r.repeatWorkDate).toLocaleDateString('tr-TR') : '-';
+            const rep2 = r.isRepeatedSecond ? 'Evet' : 'Hayır';
+            const rep2d = r.isRepeatedSecond && r.repeatWorkDateSecond ? new Date(r.repeatWorkDateSecond).toLocaleDateString('tr-TR') : '-';
+
+            let rowContext = `${r.protocolNo};${st};${r.testName};${r.requestingDoctor};${wStart};${dShare};${pAna};${rep};${rep1};${rep1d};${rep2};${rep2d};${cleanNotes}`;
+
+            const points = r.sutPoints || [];
+            for (let i = 0; i < maxSutCount; i++) {
+                rowContext += `;${points[i] !== undefined ? points[i] : ''}`;
+            }
+
+            csv += rowContext + "\n";
         });
 
         const encodedUri = encodeURI(csv);
@@ -987,16 +1072,36 @@ const PatientManager: React.FC = () => {
                                         type="checkbox"
                                         className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
                                         checked={processModalData.isRepeated}
-                                        onChange={e => setProcessModalData({ ...processModalData, isRepeated: e.target.checked })}
+                                        onChange={e => setProcessModalData({ ...processModalData, isRepeated: e.target.checked, isRepeatedSecond: e.target.checked ? processModalData.isRepeatedSecond : false, repeatWorkDateSecond: e.target.checked ? processModalData.repeatWorkDateSecond : '' })}
                                     />
-                                    <span className="text-sm font-bold text-gray-700">Örnek tekrara girdi mi?</span>
+                                    <span className="text-sm font-bold text-gray-700">Örnek tekrara girdi mi? (1. Tekrar)</span>
                                 </label>
 
                                 {processModalData.isRepeated && (
-                                    <div className="ml-6 animate-in fade-in slide-in-from-top-1 duration-200">
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Tekrar Çalışmaya Alınma Tarihi</label>
-                                        <input type="date" className="w-full border p-2 rounded focus:ring-orange-500 outline-none text-sm border-orange-200 bg-orange-50"
-                                            value={processModalData.repeatWorkDate} onChange={e => setProcessModalData({ ...processModalData, repeatWorkDate: e.target.value })} />
+                                    <div className="ml-6 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">1. Tekrar — Çalışmaya Alınma Tarihi</label>
+                                            <input type="date" className="w-full border p-2 rounded focus:ring-orange-500 outline-none text-sm border-orange-200 bg-orange-50"
+                                                value={processModalData.repeatWorkDate} onChange={e => setProcessModalData({ ...processModalData, repeatWorkDate: e.target.value })} />
+                                        </div>
+
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 text-red-500 rounded focus:ring-red-400"
+                                                checked={processModalData.isRepeatedSecond}
+                                                onChange={e => setProcessModalData({ ...processModalData, isRepeatedSecond: e.target.checked, repeatWorkDateSecond: e.target.checked ? processModalData.repeatWorkDateSecond : '' })}
+                                            />
+                                            <span className="text-sm font-bold text-gray-700">2. Kez tekrara girdi mi?</span>
+                                        </label>
+
+                                        {processModalData.isRepeatedSecond && (
+                                            <div className="ml-6 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                <label className="block text-xs font-medium text-gray-500 mb-1">2. Tekrar — Çalışmaya Alınma Tarihi</label>
+                                                <input type="date" className="w-full border p-2 rounded focus:ring-red-400 outline-none text-sm border-red-200 bg-red-50"
+                                                    value={processModalData.repeatWorkDateSecond} onChange={e => setProcessModalData({ ...processModalData, repeatWorkDateSecond: e.target.value })} />
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

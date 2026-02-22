@@ -1,0 +1,56 @@
+#!/usr/bin/expect -f
+set timeout 60
+set password "z91qhLTbRWg09uSS68"
+set ip "89.252.152.120"
+
+spawn ssh -o StrictHostKeyChecking=no root@$ip
+
+expect "password:"
+send "$password\r"
+
+expect "#"
+send "cd /var/www/sut-takip\r"
+
+expect "#"
+send "git remote -v\r"
+
+expect "#"
+send "git config --global user.email 'hamdisahinbagci@Hamdi-MacBook-Air.local'\r"
+
+expect "#"
+send "git config --global user.name 'Hamdi Şahin Bağcı'\r"
+
+expect "#"
+send "git add package-lock.json\r"
+
+expect "#"
+send "git commit -m 'chore: add package-lock.json from live server'\r"
+
+expect "#"
+send "git push origin main\r"
+
+# Set a long timeout for push
+set timeout 300
+expect {
+    "Username for" {
+        # If it asks for username, we are blocked.
+        puts "ERROR: Git push requires credentials."
+        exit 1
+    }
+    "password:" {
+        # This password field might be for git, not ssh.
+        puts "ERROR: Git push requires credentials."
+        exit 1
+    }
+    "Everything up-to-date" {
+        puts "SUCCESS: Pushed successfully."
+    }
+    "main -> main" {
+        puts "SUCCESS: Pushed successfully."
+    }
+}
+
+expect "#"
+send "exit\r"
+
+expect eof
