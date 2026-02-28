@@ -11,6 +11,16 @@ export default defineConfig(({ mode }) => {
     base: './',
     define: {
       'process.env': env
+    },
+    server: {
+      proxy: {
+        // Proxy /api requests to the VPS backend during local development
+        '/api': {
+          target: 'https://sut-takip.apollongenomics.com',
+          changeOrigin: true,
+          secure: true,
+        }
+      }
     }
   }
 })

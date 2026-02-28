@@ -1,5 +1,6 @@
 import { Patient, SUTEntry, Tender, Invoice, SUTCode, LogEntry, User, TestProtocol } from '../types';
 import { INITIAL_TENDER, MOCK_SUT_CODES } from '../constants';
+import { fetchAllData, saveDataByKey, apiLogin as apiLoginCall, apiRegister, apiGetUsers, apiDeleteUser as apiDeleteUserCall } from './apiClient';
 
 const KEYS = {
     PATIENTS: 'medisut_patients',
@@ -14,6 +15,51 @@ const KEYS = {
     CURRENT_USER: 'medisut_current_user_session'
 };
 
+// =====================================================
+// IN-MEMORY CACHE
+// =====================================================
+// On startup, loadFromAPI() fetches everything from the
+// backend MySQL database into this object. All reads are
+// synchronous from this cache. All writes update the
+// cache AND fire a background PUT to the API.
+// =====================================================
+let _cache: Record<string, any> = {};
+let _initialized = false;
+
+/**
+ * Loads all application data from the MySQL-backed API
+ * into an in-memory cache. Must be called once before
+ * any other storageService function.
+ */
+export const loadFromAPI = async (): Promise<void> => {
+    try {
+        const data = await fetchAllData();
+        _cache = data || {};
+        _initialized = true;
+        console.log('[StorageService] Data loaded from API successfully.', Object.keys(_cache));
+    } catch (error) {
+        console.error('[StorageService] Failed to load data from API, falling back to empty state.', error);
+        _cache = {};
+        _initialized = true;
+    }
+};
+
+export const isInitialized = (): boolean => _initialized;
+
+// --- INTERNAL HELPERS ---
+const get = <T>(key: string, defaultVal: T): T => {
+    const item = _cache[key];
+    return item !== undefined ? item : defaultVal;
+};
+
+const set = <T>(key: string, val: T) => {
+    _cache[key] = val;
+    // Fire-and-forget background sync to backend
+    saveDataByKey(key, val).catch(err => {
+        console.error(`[StorageService] Background save failed for key "${key}":`, err);
+    });
+};
+
 // --- SAFE UUID GENERATOR ---
 export const generateId = () => {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -23,16 +69,6 @@ export const generateId = () => {
         var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
     });
-};
-
-// Helpers
-const get = <T>(key: string, defaultVal: T): T => {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : defaultVal;
-};
-
-const set = <T>(key: string, val: T) => {
-    localStorage.setItem(key, JSON.stringify(val));
 };
 
 // --- BACKUP / RESTORE FOR DRIVE ---
