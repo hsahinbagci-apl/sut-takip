@@ -364,7 +364,7 @@ const PatientManager: React.FC = () => {
     const handleEdit = (patient: Patient) => {
         setFormData({
             ...patient,
-            interProtocolGapDays: patient.interProtocolGapDays || 11
+            interProtocolGapDays: patient.interProtocolGapDays !== undefined ? patient.interProtocolGapDays : 11
         });
         refreshData(); // Ensure fresh lists for dropdowns
         setIsFormOpen(true);
