@@ -49,7 +49,7 @@ export const isInitialized = (): boolean => _initialized;
 // --- INTERNAL HELPERS ---
 const get = <T>(key: string, defaultVal: T): T => {
     const item = _cache[key];
-    return item !== undefined ? item : defaultVal;
+    return item !== undefined ? JSON.parse(JSON.stringify(item)) : defaultVal;
 };
 
 const set = <T>(key: string, val: T) => {
