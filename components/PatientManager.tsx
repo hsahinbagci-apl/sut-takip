@@ -176,6 +176,20 @@ const PatientManager: React.FC = () => {
         const assignedIds = selectedProtocols.map(p => p.id);
         const existingPatient = patients.find(p => p.id === formData.id);
 
+        let finalActiveId = startProtocolId;
+        if (!assignedIds.includes(finalActiveId)) {
+            finalActiveId = assignedIds.length > 0 ? assignedIds[0] : '';
+        }
+
+        let newCurrentStepIndex = 0;
+        if (existingPatient) {
+            if (existingPatient.activeProtocolId === finalActiveId) {
+                newCurrentStepIndex = existingPatient.currentStepIndex;
+            } else {
+                newCurrentStepIndex = 0; // Reset if protocol changed
+            }
+        }
+
         // Preserve existing protocolProcesses if editing, or initialize empty
         let existingProcesses = existingPatient?.protocolProcesses || [];
 
@@ -186,10 +200,10 @@ const PatientManager: React.FC = () => {
             testName: finalTestName,
 
             assignedProtocolIds: assignedIds,
-            activeProtocolId: existingPatient ? formData.activeProtocolId : startProtocolId,
-            interProtocolGapDays: formData.interProtocolGapDays || 11,
+            activeProtocolId: finalActiveId,
+            interProtocolGapDays: formData.interProtocolGapDays !== undefined ? formData.interProtocolGapDays : 11,
 
-            currentStepIndex: existingPatient ? existingPatient.currentStepIndex : 0,
+            currentStepIndex: newCurrentStepIndex,
 
             requestingDoctor: formData.requestingDoctor || '',
             admissionDate: formData.admissionDate || new Date().toISOString(),
